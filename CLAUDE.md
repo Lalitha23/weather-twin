@@ -4,6 +4,7 @@
 A test bench that catches agent failures before they spread from one agent to the next.
 Hackathon entry for the Nebius x NVIDIA Global AI Hackathon 2026.
 Deadline: Fri Oct 30, 2026, 10:00 AM PT. Target submit: Thu Oct 29 night.
+The app has two tabs. Today is a daily agent the owner uses, and Test Lab is the twin suite that tests models and prompts before Today changes.
 
 ## Hard rules (hackathon screening)
 - Every LLM call goes through Nebius Token Factory (OpenAI compatible, base URL in .env).
@@ -12,10 +13,11 @@ Deadline: Fri Oct 30, 2026, 10:00 AM PT. Target submit: Thu Oct 29 night.
 - Public GitHub repo, MIT license, README with setup steps.
 - Needs a working demo URL (plan: Streamlit Community Cloud) and a video under 3 minutes.
 
-## Scope freeze
-The idea is frozen. Do not add features beyond this file.
-If something new comes up, add it to PARKING_LOT.md instead of building it.
-Explicitly out of scope: calendar input, user preferences, a third model, databases, auth, a custom frontend.
+## Scope rules
+Core steps come first. Increments start only after core is submitted, one at a time, in order.
+Each ends committed with tests passing and the app working.
+Anything not listed goes to PARKING_LOT.md.
+Explicitly out of scope: databases, auth, a custom frontend.
 
 ## Architecture
 Weather source (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> Checks -> Runner -> Results app
@@ -79,6 +81,15 @@ Work one step at a time. Finish and commit each step before starting the next.
 3. Agent 1 Summarizer and Agent 2 Advisor running end to end on live weather, with runner/run_once.py. (done)
 4. Twin backend. Record a real Open-Meteo response, build tools/weather_twin.py, write the fidelity test.
 5. Scenarios. The eight scenario files, all running through both agents.
-6. Checks and matrix. The six checks and runner/run_matrix.py across both models.
-7. Results app. The Streamlit table, deployed to Streamlit Cloud.
+6. Six checks, prompt versions (v1 plain, v2 hardened), and runner/run_matrix.py across models and prompt versions.
+7. Two tab Streamlit app. Today tab behind a password. Test Lab tab reads saved results. Deploy to Streamlit Cloud.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
+
+## Increments
+- A. Promote button.
+- B. why_consistent and role_adherence checks.
+- C. Tavily alerts as a second twinned tool.
+- D. A third model.
+- E. Personal preferences.
+- F. Calendar input.
+- G. A daily morning run.
