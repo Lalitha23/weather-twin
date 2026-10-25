@@ -6,3 +6,7 @@ Good ideas that are NOT part of this build. Revisit after Oct 30.
 - Personal preferences ("I get cold easily")
 - A third comparison model
 - Tavily as a second twinned tool
+
+## Findings
+
+- Sun Oct 25 live run. gpt-oss put advice in the Agent 1 notes field and Nemotron did not. Possible role adherence check later.

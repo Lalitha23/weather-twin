@@ -23,7 +23,7 @@ Weather source (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> Checks
 - ONE tool interface, TWO backends. Both agents only ever see `get_weather`.
   `WEATHER_BACKEND=live|twin` decides which backend runs. Agents must not know which.
 - Agent 1 (Summarizer) calls `get_weather` as a real tool call and returns a fixed summary:
-  `{temperature_c, rain_chance_pct, wind_kph, time_of_day, data_ok, notes}`
+  `{temperature_c, rain_chance_pct, wind_kph, conditions, time_of_day, data_ok, notes}`
 - Agent 2 (Advisor) sees ONLY Agent 1's summary, never raw weather data. Returns:
   `{jacket: bool, umbrella: bool, why: str, confident: bool}`
 - Validate both outputs with Pydantic. A validation failure is a recorded result, not a crash.
@@ -36,6 +36,7 @@ config/models.yaml        model IDs (read from .env)
 tools/weather_tool.py     shared interface + backend switch
 tools/weather_live.py     Open-Meteo (no API key)
 tools/weather_twin.py     reads scenarios/*.json, can simulate timeout/error
+agents/schemas.py         Pydantic models for summary and advice
 agents/summarizer.py
 agents/advisor.py
 agents/prompts/           one prompt file per agent
