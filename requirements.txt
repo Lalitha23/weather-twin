@@ -1,0 +1,7 @@
+openai>=1.40
+python-dotenv>=1.0
+requests>=2.31
+pydantic>=2.6
+pyyaml>=6.0
+streamlit>=1.36
+pytest>=8.0
