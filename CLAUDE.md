@@ -79,10 +79,10 @@ Work one step at a time. Finish and commit each step before starting the next.
 1. Setup. Token Factory key, model list, smoke tests. (done)
 2. Live weather tool with the shared interface. (done)
 3. Agent 1 Summarizer and Agent 2 Advisor running end to end on live weather, with runner/run_once.py. (done)
-4. Twin backend. Record a real Open-Meteo response, build tools/weather_twin.py, write the fidelity test.
+4. Twin backend. Record a real Open-Meteo response, build tools/weather_twin.py, write the fidelity test. (done)
 5. Scenarios. The eight scenario files, all running through both agents.
 6. Six checks, prompt versions (v1 plain, v2 hardened), and runner/run_matrix.py across models and prompt versions.
-7. Two tab Streamlit app. Today tab behind a password. Test Lab tab reads saved results. Deploy to Streamlit Cloud.
+7. Two tab Streamlit app. Today tab behind a password (a simple shared password, not auth). Test Lab tab reads saved results. Deploy to Streamlit Cloud.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
 
 ## Increments
