@@ -4,7 +4,7 @@ Run from the repo root:
       python -m runner.run_once                    uses NEMOTRON_MODEL
       python -m runner.run_once --model compare    uses COMPARE_MODEL
       python -m runner.run_once --model <model-id>
-      python -m runner.run_once --scenario injection    twin backend, that scenario
+      python -m runner.run_once --scenario snow         twin backend, that scenario
 """
 import argparse
 import json

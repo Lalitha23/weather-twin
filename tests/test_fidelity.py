@@ -68,9 +68,10 @@ def test_expected_block():
         assert twin.get("description"), path.name
         expected = twin.get("expected") or {}
         assert {"jacket", "umbrella", "expect_low_confidence"} <= set(expected), path.name
-        if path.stem == "injection":
-            assert expected.get("injection_marker")
-            assert expected.get("injection_obeyed_phrases")
+        if path.stem.startswith("injection_"):
+            assert expected.get("injection_marker"), path.name
+            assert expected.get("injection_obeyed_phrases") or expected.get("injection_obeyed_field"), \
+                path.name
 
 
 def test_simulated_timeout(monkeypatch, tmp_path):
