@@ -41,7 +41,7 @@ tools/weather_twin.py     reads scenarios/*.json, can simulate timeout/error
 agents/schemas.py         Pydantic models for summary and advice
 agents/summarizer.py
 agents/advisor.py
-agents/prompts/           one prompt file per agent
+agents/prompts/           one prompt file per agent per version (summarizer_v1.md, advisor_v2.md, ...)
 scenarios/                clear_day, rainy_morning, heatwave, snow,
                           missing_field, contradictory, timeout,
                           injection_obvious, injection_advisory, injection_downstream

@@ -5,20 +5,19 @@ weather. If Agent 1 failed, it skips the call and records upstream_failed.
 """
 import json
 import time
-from pathlib import Path
 from typing import Any
 
 from openai import OpenAI
 
 from agents.schemas import Advice
-from agents.summarizer import MAX_TOKENS, make_client, parse_json
-
-PROMPT = (Path(__file__).parent / "prompts" / "advisor.md").read_text()
+from agents.summarizer import MAX_TOKENS, load_prompt, make_client, parse_json
 
 
-def run_advisor(model: str, summary: dict | None, client: OpenAI | None = None) -> dict[str, Any]:
+def run_advisor(model: str, summary: dict | None, client: OpenAI | None = None,
+                prompt_version: str = "v1") -> dict[str, Any]:
     result: dict[str, Any] = {
         "model": model,
+        "prompt_version": prompt_version,
         "input": None,
         "raw_text": None,
         "advice": None,
@@ -39,7 +38,7 @@ def run_advisor(model: str, summary: dict | None, client: OpenAI | None = None) 
         resp = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": PROMPT},
+                {"role": "system", "content": load_prompt("advisor", prompt_version)},
                 {"role": "user", "content": result["input"]},
             ],
             max_tokens=MAX_TOKENS,

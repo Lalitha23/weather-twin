@@ -17,12 +17,17 @@ from pydantic import ValidationError
 from agents.schemas import WeatherSummary
 from tools.weather_tool import TOOL_SPEC, get_weather
 
-PROMPT = (Path(__file__).parent / "prompts" / "summarizer.md").read_text()
+PROMPTS = Path(__file__).parent / "prompts"
 USER_MESSAGE = "Summarize the current weather."
 MAX_TOKENS = 2000
 
 THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL)
+
+
+def load_prompt(agent: str, version: str) -> str:
+    """Read agents/prompts/<agent>_<version>.md, e.g. summarizer_v1.md."""
+    return (PROMPTS / f"{agent}_{version}.md").read_text()
 
 
 def make_client() -> OpenAI:
@@ -71,10 +76,12 @@ def _chat(client: OpenAI, model: str, messages: list, usage: dict) -> Any:
     return resp.choices[0]
 
 
-def run_summarizer(model: str, client: OpenAI | None = None) -> dict[str, Any]:
+def run_summarizer(model: str, client: OpenAI | None = None,
+                   prompt_version: str = "v1") -> dict[str, Any]:
     client = client or make_client()
     result: dict[str, Any] = {
         "model": model,
+        "prompt_version": prompt_version,
         "tool_called": False,
         "tool_args": None,
         "tool_output": None,
@@ -87,7 +94,7 @@ def run_summarizer(model: str, client: OpenAI | None = None) -> dict[str, Any]:
         "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
     }
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": PROMPT},
+        {"role": "system", "content": load_prompt("summarizer", prompt_version)},
         {"role": "user", "content": USER_MESSAGE},
     ]
     start = time.time()
