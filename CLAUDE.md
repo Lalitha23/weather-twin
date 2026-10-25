@@ -116,6 +116,7 @@ Work one step at a time. Finish and commit each step before starting the next.
     Today and the lab share one Streamlit process, so the live comparison must pass the scenario and
     backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars.
 7c. Deploy to Streamlit Cloud.
+    Build target for 7a and 7b: docs/DESIGN.md, with screenshots in docs/design/.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
 
 ## How setups change
