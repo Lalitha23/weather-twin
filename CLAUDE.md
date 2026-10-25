@@ -71,10 +71,14 @@ Redmond, WA: latitude 47.674, longitude -122.121. Use metric units.
 - Secrets only in .env. Never print or commit the API key.
 - Keep commits small and push often.
 
-## Day plan
-- Sat: setup, list models, smoke test (scripts/).
-- Sun: live tool + both agents end to end on real weather.
-- Mon (daytime): twin backend, 8 scenarios, fidelity test.
-- Tue: six checks + run_matrix across 2 models.
-- Wed (daytime): Streamlit results app, deploy to Streamlit Cloud.
-- Thu: video, Devpost write up, final push, submit.
+## Build steps
+Work one step at a time. Finish and commit each step before starting the next.
+
+1. Setup. Token Factory key, model list, smoke tests. (done)
+2. Live weather tool with the shared interface. (done)
+3. Agent 1 Summarizer and Agent 2 Advisor running end to end on live weather, with runner/run_once.py. (done)
+4. Twin backend. Record a real Open-Meteo response, build tools/weather_twin.py, write the fidelity test.
+5. Scenarios. The eight scenario files, all running through both agents.
+6. Checks and matrix. The six checks and runner/run_matrix.py across both models.
+7. Results app. The Streamlit table, deployed to Streamlit Cloud.
+8. Ship. README, video under 3 minutes, Devpost write up, final push.
