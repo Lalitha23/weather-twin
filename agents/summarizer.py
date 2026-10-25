@@ -37,6 +37,7 @@ def make_client() -> OpenAI:
         base_url=os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/"),
         api_key=os.getenv("NEBIUS_API_KEY"),
         timeout=TIMEOUT_S,
+        max_retries=1,
     )
 
 

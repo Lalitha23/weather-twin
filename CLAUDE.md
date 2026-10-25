@@ -35,6 +35,7 @@ Weather source (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> Checks
 ## Folder layout
 ```
 config/models.yaml        model IDs (read from .env)
+config/active.yaml        the current setup (model + prompt version) that comparisons run against
 tools/weather_tool.py     shared interface + backend switch
 tools/weather_live.py     Open-Meteo (no API key)
 tools/weather_twin.py     reads scenarios/*.json, can simulate timeout/error
@@ -109,14 +110,26 @@ Work one step at a time. Finish and commit each step before starting the next.
 5. Scenarios. The eight scenario files, all running through both agents. (done)
 6. Eight checks, prompt versions (v1 plain, v2 hardened), and runner/run_matrix.py across models and prompt versions.
    Each scenario x model x prompt cell runs 3 times, and results are reported as pass counts like "2 of 3". (done)
-7. Two tab Streamlit app. Today tab behind a password (a simple shared password, not auth). Test Lab tab reads saved results. Deploy to Streamlit Cloud.
+7a. Today tab plus the saved official report (results/matrix_summary.json and
+    results/official_matrix_oct25.jsonl), running locally.
+7b. Live comparison in Test Lab, behind the password (a simple shared password, not auth).
+    Today and the lab share one Streamlit process, so the live comparison must pass the scenario and
+    backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars.
+7c. Deploy to Streamlit Cloud.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
+
+## How setups change
+- The system prompt stays mostly fixed, and the model is what usually gets swapped.
+- Every comparison is current versus candidate. Current comes from config/active.yaml.
+- Results sort into fixed, still failing, newly broken and still passing. A cell counts as passing
+  only if every repeat passed.
+- Lab runs never overwrite the official report.
 
 ## Increments
 - A. Promote button.
 - B. why_consistent check.
 - C. Tavily alerts as a second twinned tool.
-- D. A third model.
+- D. Plausibility rules in code for data no prompt fixed, such as heavy snow at 30 °C.
 - E. Personal preferences.
 - F. Calendar input.
 - G. A daily morning run.
