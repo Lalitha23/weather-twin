@@ -34,10 +34,7 @@ def get_weather() -> dict[str, Any]:
             from tools.weather_live import get_weather_live
             return get_weather_live()
         if backend == "twin":
-            try:
-                from tools.weather_twin import get_weather_twin
-            except ImportError:
-                raise NotImplementedError("twin backend not built yet") from None
+            from tools.weather_twin import get_weather_twin
             return get_weather_twin()
     except requests.Timeout:
         return {"error": "timeout"}
