@@ -27,7 +27,7 @@ Blue versus orange is deliberate. It stays readable for colour blind viewers. Do
 - Two top tabs: **Today** and **Test Lab**.
 - Test Lab has two sub views: **Official report** (public) and **Live comparison** (password, lock icon).
 
-## Today tab (phone first, also fine on desktop)
+## Today tab (desktop and phone)
 
 Locked state (until `APP_PASSWORD` is entered):
 - Card titled "Enter your password". Text: "Today runs the live agent on Nebius Token Factory. The password keeps strangers from spending your credits."
@@ -84,9 +84,19 @@ Intro: "Try a new setup against the one Today runs. Same agents, same scenarios,
 - Fixed, Still failing and Still passing are collapsed expanders with counts.
 - Cost and speed for current versus candidate.
 
-## Layout rules
+## Desktop and phone
 
+Every screen must work well on both. Test each one at desktop width (about 1280 px) and phone width (about 390 px).
+
+| Screen | Desktop | Phone |
+|---|---|---|
+| Today | Content centred in a column about 480 px wide, so it reads like a card, not stretched across the screen. Answer tiles side by side. | Full width with 16 to 20 px side margins. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
+| Official report | Decision card text and reason boxes side by side. Results table fully visible. Run trace panels in three columns. Cost table and "No prompt fixed this" card side by side. | Decision card stacks, reasons under the title. Results table scrolls sideways inside its own box. Run trace panels stack in order 1, 2, 3. Cards stack. |
+| Live comparison | Current and candidate boxes in one row. Count tiles in one row of four. | Current and candidate boxes stack. Count tiles in a two by two grid. Tables scroll sideways inside their own box. |
+
+General rules for both:
 - Max content width about 1200 px, centred.
-- Card padding about 24 px. Gaps 12 to 24 px.
-- On phone widths, side by side panels stack and wide tables scroll inside their own box.
+- Card padding about 24 px on desktop, 16 px on phone. Gaps 12 to 24 px.
+- No sideways scrolling of the whole page at any width. Only wide tables scroll, inside their own box.
 - Touch targets at least 44 px tall.
+- Text never smaller than 13 px.
