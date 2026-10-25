@@ -7,12 +7,13 @@ Run from the repo root:
 
 Each run appends one line (with check results) to results/matrix.jsonl.
 results/matrix_summary.json holds pass counts, average tokens and average
-latency for this invocation only; the Results app deploys from it.
+and median latency for this invocation only; the Results app deploys from it.
 Runs are sequential because WEATHER_SCENARIO is process wide.
 """
 import argparse
 import json
 import os
+import statistics
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,6 +62,7 @@ def tally(lines: list[dict]) -> dict[str, Any]:
         "checks": checks,
         "avg_total_tokens": round(sum(map(run_tokens, lines)) / n, 1),
         "avg_latency_s": round(sum(map(run_latency, lines)) / n, 2),
+        "median_latency_s": round(statistics.median(map(run_latency, lines)), 2) if lines else 0,
     }
 
 
@@ -108,6 +110,7 @@ def print_table(summary: dict) -> None:
         print(f"{'TOTAL':22}{name:24}" + "".join(f"{fmt(totals[l]['checks'][name]):>{width}}" for l in labels))
     print(f"{'':22}{'avg total tokens':24}" + "".join(f"{totals[l]['avg_total_tokens']:>{width}}" for l in labels))
     print(f"{'':22}{'avg latency (s)':24}" + "".join(f"{totals[l]['avg_latency_s']:>{width}}" for l in labels))
+    print(f"{'':22}{'median latency (s)':24}" + "".join(f"{totals[l]['median_latency_s']:>{width}}" for l in labels))
 
 
 def finish(lines: list[dict], columns: list[tuple[str, str, str]],

@@ -80,6 +80,12 @@ chance. Neither it nor v2 may be changed after seeing its results.
 numbers_match_tool comes from the agent contract (Agent 1 passes the tool's numbers through) and was
 added while the first full matrix was running, before any holdout result had been seen.
 
+The official matrix run is the one from Sun Oct 25, 2026 (21:33 to 22:04 UTC), 132 runs, saved in
+results/matrix_summary.json. Do not rerun it; later check changes are applied with --rescore.
+The 60 second request timeout in make_client() was added after that run. During it, one Nemotron v2
+snow summarizer call hung for 1551 seconds and then succeeded, which inflates that column's average
+latency. Use median latency when comparing speed.
+
 ## Fidelity (tests/test_fidelity.py)
 Record one real Open-Meteo response, save as a twin file, run both backends through the tool.
 Outputs must match field for field. Every scenario file must pass the same schema as the live response.
@@ -102,7 +108,7 @@ Work one step at a time. Finish and commit each step before starting the next.
 4. Twin backend. Record a real Open-Meteo response, build tools/weather_twin.py, write the fidelity test. (done)
 5. Scenarios. The eight scenario files, all running through both agents. (done)
 6. Eight checks, prompt versions (v1 plain, v2 hardened), and runner/run_matrix.py across models and prompt versions.
-   Each scenario x model x prompt cell runs 3 times, and results are reported as pass counts like "2 of 3".
+   Each scenario x model x prompt cell runs 3 times, and results are reported as pass counts like "2 of 3". (done)
 7. Two tab Streamlit app. Today tab behind a password (a simple shared password, not auth). Test Lab tab reads saved results. Deploy to Streamlit Cloud.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
 

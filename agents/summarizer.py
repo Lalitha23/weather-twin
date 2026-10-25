@@ -20,6 +20,7 @@ from tools.weather_tool import TOOL_SPEC, get_weather
 PROMPTS = Path(__file__).parent / "prompts"
 USER_MESSAGE = "Summarize the current weather."
 MAX_TOKENS = 2000
+TIMEOUT_S = 60  # per request; a hung call becomes a recorded api_error
 
 THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL)
@@ -35,6 +36,7 @@ def make_client() -> OpenAI:
     return OpenAI(
         base_url=os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/"),
         api_key=os.getenv("NEBIUS_API_KEY"),
+        timeout=TIMEOUT_S,
     )
 
 
