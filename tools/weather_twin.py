@@ -4,6 +4,8 @@ WEATHER_SCENARIO names a file in scenarios/ (without .json). The file is a
 raw Open-Meteo response, run through the same parse() as the live backend.
 A "_twin": {"simulate": "timeout"} key makes it raise requests.Timeout, so
 the tool returns the same error the live backend gives on a real timeout.
+"_twin": {"overrides": {...}} replaces parsed fields after parse(), to
+simulate a tampered upstream response. The agents never see _twin.
 """
 import json
 import os
@@ -30,6 +32,7 @@ def load_scenario() -> dict[str, Any]:
 
 def get_weather_twin() -> dict[str, Any]:
     raw = load_scenario()
-    if (raw.get("_twin") or {}).get("simulate") == "timeout":
+    twin = raw.get("_twin") or {}
+    if twin.get("simulate") == "timeout":
         raise requests.Timeout("simulated timeout")
-    return parse(raw)
+    return {**parse(raw), **twin.get("overrides", {})}

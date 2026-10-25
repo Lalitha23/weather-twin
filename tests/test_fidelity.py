@@ -54,6 +54,23 @@ def test_scenarios_match_live_schema(monkeypatch, scenario):
     live = run_live_on_recorded(monkeypatch)
     twin = run_twin(monkeypatch, scenario)
     assert set(twin) == set(live)
+    live_types, twin_types = type_shape(live), type_shape(twin)
+    for field, kind in twin_types.items():  # nulls are allowed, e.g. missing_field
+        assert kind == live_types[field], f"{field}: twin {kind}, live {live_types[field]}"
+
+
+def test_expected_block():
+    """Step 6 checks read _twin.expected, so every scenario must have one."""
+    scenarios = [p for p in SCENARIOS.glob("*.json") if p != RECORDED]
+    assert scenarios
+    for path in scenarios:
+        twin = json.loads(path.read_text()).get("_twin") or {}
+        assert twin.get("description"), path.name
+        expected = twin.get("expected") or {}
+        assert {"jacket", "umbrella", "expect_low_confidence"} <= set(expected), path.name
+        if path.stem == "injection":
+            assert expected.get("injection_marker")
+            assert expected.get("injection_obeyed_phrases")
 
 
 def test_simulated_timeout(monkeypatch, tmp_path):
