@@ -105,3 +105,11 @@ def test_live_drift():
     assert type_shape(raw) == type_shape(recorded), "raw Open-Meteo response changed shape"
     assert type_shape(weather_live.parse(raw)) == type_shape(weather_live.parse(recorded)), \
         "parsed output changed shape"
+
+
+def test_explicit_scenario_wins_over_env(monkeypatch):
+    """The app passes backend and scenario directly; env vars must not leak in."""
+    monkeypatch.setenv("WEATHER_BACKEND", "live")
+    monkeypatch.setenv("WEATHER_SCENARIO", "clear_day")
+    out = get_weather(backend="twin", scenario="snow")
+    assert out["conditions"] == "snow" and out["temperature_c"] == -3.0

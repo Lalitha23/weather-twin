@@ -84,16 +84,20 @@ def run_today(model_alias: str, prompt_version: str) -> dict:
     }
 
 
-def _locked() -> None:
+LOCK_TEXT_TODAY = ("Today runs the live agent on Nebius Token Factory. "
+                   "The password keeps strangers from spending your credits.")
+
+
+def lock_card(key: str, text: str = LOCK_TEXT_TODAY) -> None:
+    """The shared password card. One unlock covers Today and the live comparison."""
     password = os.getenv("APP_PASSWORD", "")
-    with st.container(key="lockcard"):
+    with st.container(key=f"lockcard_{key}"):
         md('<h3 style="margin:0 0 6px;font-size:18px;">Enter your password</h3>'
-           '<p class="muted" style="margin:0 0 12px;">Today runs the live agent on Nebius Token Factory. '
-           'The password keeps strangers from spending your credits.</p>')
+           f'<p class="muted" style="margin:0 0 12px;">{esc(text)}</p>')
         if not password:
-            md(f'<div class="note-orange">Today isn\'t set up yet. APP_PASSWORD is missing.</div>')
+            md('<div class="note-orange">This isn\'t set up yet. APP_PASSWORD is missing.</div>')
             return
-        with st.form("unlock", border=False):
+        with st.form(f"unlock_{key}", border=False):
             entered = st.text_input("Password", type="password", label_visibility="collapsed",
                                     placeholder="Password")
             if st.form_submit_button("Unlock", type="primary", use_container_width=True):
@@ -101,6 +105,10 @@ def _locked() -> None:
                     st.session_state["unlocked"] = True
                     st.rerun()
                 st.error("That password didn't work.")
+
+
+def _locked() -> None:
+    lock_card("today")
     md('<p class="muted" style="text-align:center;margin-top:12px;font-size:14px;">'
        'Test Lab stays open to everyone. It only shows saved results.</p>')
 

@@ -6,7 +6,8 @@ through app.report_data.
 import streamlit as st
 
 from app import report_data as rd
-from app.ui import esc, json_block, md
+from app.drilldown import render_run
+from app.ui import esc, md
 
 
 @st.cache_data(show_spinner=False)
@@ -73,12 +74,6 @@ def _results_table(summary: dict, shipped: str) -> None:
 </div>""")
 
 
-def _panel(n: int, title: str, body: str, start: int | None) -> str:
-    is_start = n == start
-    flag = "<em>failure starts here</em>" if is_start else ""
-    return f'<div class="panel {"start" if is_start else ""}"><div class="ph"><span>{n} · {title}</span>{flag}</div>{body}</div>'
-
-
 def _run_trace(summary: dict, runs: list[dict], shipped: str) -> None:
     md('<div class="card" style="margin-bottom:8px;"><h3>Look inside a run</h3>'
        '<p class="muted" style="margin:0;">Pick any run from the official matrix and follow it through both agents.</p></div>')
@@ -97,36 +92,7 @@ def _run_trace(summary: dict, runs: list[dict], shipped: str) -> None:
     if run is None:
         md('<div class="card err">That run is not in the official results.</div>')
         return
-    checks = run["checks"]
-    tool = run["summarizer"]["tool_output"]
-    summ = run["summarizer"]["summary"]
-    advice = run["advisor"]["advice"]
-    start = rd.failure_start(checks)
-
-    md(f'<div class="callout">{esc(rd.callout(checks))}</div>')
-    diff = rd.differing_fields(tool, summ)
-    p1, p2, p3 = st.columns(3)
-    with p1:
-        md(_panel(1, "Tool output (twin)", json_block(tool, diff), start))
-    with p2:
-        body = json_block(summ, diff) if summ is not None else \
-            f'<p class="muted">No summary ({esc(run["summarizer"]["error"])})</p>'
-        md(_panel(2, "Agent 1 summary", body, start))
-    with p3:
-        body = json_block(advice, rd.wrong_advice_fields(checks)) if advice is not None else \
-            f'<p class="muted">No advice ({esc(run["advisor"]["error"])})</p>'
-        md(_panel(3, "Agent 2 advice", body, start))
-
-    boxes = []
-    for name, c in rd.checks_sorted(checks):
-        if c["result"] == "n/a":
-            continue
-        fail = c["result"] == "fail"
-        detail = f"<p>{esc(c['detail'])}</p>" if c["detail"] else ""
-        boxes.append(f'<div class="chk {"fail" if fail else ""}"><b>{name}</b>'
-                     f'<span class="r">{"Fail" if fail else "Pass"}</span>{detail}</div>')
-    md(f'<div class="card" style="margin-top:16px;"><h3>Checks for this run</h3>'
-       f'<div class="checks">{"".join(boxes)}</div></div>')
+    render_run(run)
 
 
 def _cost(summary: dict) -> str:

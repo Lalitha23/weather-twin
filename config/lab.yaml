@@ -1,0 +1,5 @@
+# Settings for the Live comparison in Test Lab.
+workers: 4               # runs in flight at once; current and candidates are interleaved
+rate_limit_retries: 2    # extra attempts after a rate limit error before recording it
+retry_wait_s: 5          # first wait; doubles on each retry
+max_candidates: 3

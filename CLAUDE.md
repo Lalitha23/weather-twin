@@ -36,6 +36,7 @@ Weather source (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> Checks
 ```
 config/models.yaml        model IDs (read from .env)
 config/active.yaml        the current setup (model + prompt version) that comparisons run against
+config/lab.yaml           live comparison settings (workers, rate limit retries)
 tools/weather_tool.py     shared interface + backend switch
 tools/weather_live.py     Open-Meteo (no API key)
 tools/weather_twin.py     reads scenarios/*.json, can simulate timeout/error
@@ -49,6 +50,7 @@ scenarios/                clear_day, rainy_morning, heatwave, snow,
                           injection_holdout (held out, see below)
 checks/checks.py          deterministic pass/fail rules, no LLM judge
 runner/run_matrix.py      scenarios x models x prompt versions, 3 runs per cell
+runner/compare.py         current vs candidate engine for the live comparison
 results/
 app/streamlit_app.py      scenarios as rows, models as columns, click for trace
 tests/test_fidelity.py    live vs twin

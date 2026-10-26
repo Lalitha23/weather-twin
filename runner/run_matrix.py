@@ -8,7 +8,7 @@ Run from the repo root:
 Each run appends one line (with check results) to results/matrix.jsonl.
 results/matrix_summary.json holds pass counts, average tokens and average
 and median latency for this invocation only; the Results app deploys from it.
-Runs are sequential because WEATHER_SCENARIO is process wide.
+Runs are sequential, as in the official run.
 """
 import argparse
 import json

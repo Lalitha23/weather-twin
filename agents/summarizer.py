@@ -80,7 +80,8 @@ def _chat(client: OpenAI, model: str, messages: list, usage: dict) -> Any:
 
 
 def run_summarizer(model: str, client: OpenAI | None = None,
-                   prompt_version: str = "v1") -> dict[str, Any]:
+                   prompt_version: str = "v1", weather: dict | None = None) -> dict[str, Any]:
+    """weather holds get_weather's backend and scenario; None uses the env vars."""
     client = client or make_client()
     result: dict[str, Any] = {
         "model": model,
@@ -120,7 +121,7 @@ def run_summarizer(model: str, client: OpenAI | None = None,
         outputs = []
         for call in msg.tool_calls:
             if call.function.name == TOOL_SPEC["function"]["name"]:
-                output = get_weather()
+                output = get_weather(**(weather or {}))
             else:
                 output = {"error": f"unknown tool {call.function.name}"}
             outputs.append(output)

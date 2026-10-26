@@ -24,16 +24,16 @@ def load_secrets() -> None:
                 os.environ.setdefault(key, str(value))
     except Exception:  # no secrets file locally
         pass
-    # Today only uses live weather and the report makes no calls. The live
-    # comparison (step 7b) will pass backend and scenario to the tool directly.
+    # Today uses live weather by default. The live comparison passes backend
+    # and scenario to the tool directly, so the two never share this setting.
     os.environ["WEATHER_BACKEND"] = "live"
 
 
 st.set_page_config(page_title="Weather Twin", page_icon="☂", layout="wide")
 load_secrets()
 
-from app import report, today  # noqa: E402
-from app.ui import inject_css, md, title  # noqa: E402
+from app import lab, report, today  # noqa: E402
+from app.ui import inject_css, title  # noqa: E402
 
 inject_css()
 title()
@@ -45,7 +45,4 @@ with tab_lab:
     with official:
         report.render()
     with live:
-        md('<div class="card"><h3>Live comparison</h3>'
-           '<p class="muted" style="margin:0;">Coming in step 7b. Try a new setup against the one Today runs, '
-           'with fresh runs on the same scenarios. It will sit behind the password because it spends '
-           'Token Factory credits.</p></div>')
+        lab.render()

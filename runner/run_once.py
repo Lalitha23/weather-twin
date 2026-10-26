@@ -34,25 +34,23 @@ def resolve_model(name: str) -> str:
     return model
 
 
-def use_scenario(name: str) -> None:
-    """Point the tool at the twin backend and one scenario file."""
+def check_scenario(name: str) -> None:
     if not (SCENARIOS / f"{name}.json").is_file():
         names = ", ".join(sorted(p.stem for p in SCENARIOS.glob("*.json")))
         sys.exit(f"Unknown scenario {name!r}. Choose from: {names}")
-    os.environ["WEATHER_BACKEND"] = "twin"
-    os.environ["WEATHER_SCENARIO"] = name
 
 
 def run_one(model: str, scenario: str | None, prompt_version: str,
             client: OpenAI) -> dict[str, Any]:
-    """Both agents once. scenario=None uses WEATHER_BACKEND as set."""
-    if scenario:
-        use_scenario(scenario)
-    summarizer = run_summarizer(model, client, prompt_version)
+    """Both agents once. A scenario runs on the twin, passed to the tool directly
+    (safe across threads). scenario=None uses WEATHER_BACKEND as set."""
+    weather = {"backend": "twin", "scenario": scenario} if scenario else None
+    backend = "twin" if scenario else os.getenv("WEATHER_BACKEND", "live").strip().lower()
+    summarizer = run_summarizer(model, client, prompt_version, weather)
     advisor = run_advisor(model, summarizer["summary"], client, prompt_version)
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "backend": os.getenv("WEATHER_BACKEND", "live").strip().lower(),
+        "backend": backend,
         "scenario": scenario or "live",
         "model": model,
         "prompt_version": prompt_version,
@@ -74,7 +72,7 @@ def main() -> None:
         sys.exit("NEBIUS_API_KEY is missing. Copy .env.example to .env and fill it in.")
     model = resolve_model(args.model)
     if args.scenario:
-        use_scenario(args.scenario)
+        check_scenario(args.scenario)
 
     line = run_one(model, args.scenario, args.prompt, make_client())
     RESULTS.parent.mkdir(exist_ok=True)
