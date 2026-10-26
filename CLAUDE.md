@@ -84,7 +84,9 @@ numbers_match_tool comes from the agent contract (Agent 1 passes the tool's numb
 added while the first full matrix was running, before any holdout result had been seen.
 
 The official matrix run is the one from Sun Oct 25, 2026 (21:33 to 22:04 UTC), 132 runs, saved in
-results/matrix_summary.json. Do not rerun it; later check changes are applied with --rescore.
+results/matrix_summary.json. Do not rerun it; later check changes are applied with
+`python -m runner.run_matrix --rescore --official --force`, which rescores official_matrix_oct25.jsonl.
+Without --official, run_matrix only writes results/matrix_scratch*.
 The 60 second request timeout in make_client() was added after that run. During it, one Nemotron v2
 snow summarizer call hung for 1551 seconds and then succeeded, which inflates that column's average
 latency. Use median latency when comparing speed.
@@ -117,7 +119,7 @@ Work one step at a time. Finish and commit each step before starting the next.
     results/official_matrix_oct25.jsonl), running locally.
 7b. Live comparison in Test Lab, behind the password (a simple shared password, not auth).
     Today and the lab share one Streamlit process, so the live comparison must pass the scenario and
-    backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars.
+    backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars. (done)
 7c. Deploy to Streamlit Cloud.
     Build target for 7a and 7b: docs/DESIGN.md, with screenshots in docs/design/.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.

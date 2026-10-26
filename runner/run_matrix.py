@@ -3,11 +3,14 @@
 Run from the repo root:
       python -m runner.run_matrix
       python -m runner.run_matrix --models nemotron --prompts v2 --scenarios snow --repeats 1
-      python -m runner.run_matrix --rescore    recompute checks from results/matrix.jsonl, no model calls
+      python -m runner.run_matrix --rescore    recompute checks on saved runs, no model calls
+      python -m runner.run_matrix --rescore --official --force    rescore the official run
 
-Each run appends one line (with check results) to results/matrix.jsonl.
-results/matrix_summary.json holds pass counts, average tokens and average
-and median latency for this invocation only; the Results app deploys from it.
+By default it writes scratch files only: each run appends one line (with
+check results) to results/matrix_scratch.jsonl, and the summary goes to
+results/matrix_scratch_summary.json. The official files the app deploys from
+(official_matrix_oct25.jsonl and matrix_summary.json) are written only with
+--official, which refuses if the official runs file exists unless --force.
 Runs are sequential, as in the official run.
 """
 import argparse
@@ -27,8 +30,22 @@ from runner.run_once import ALIASES, resolve_model, run_one
 from tools.weather_twin import SCENARIOS
 
 RESULTS = Path(__file__).resolve().parent.parent / "results"
-RUNS_FILE = RESULTS / "matrix.jsonl"
-SUMMARY_FILE = RESULTS / "matrix_summary.json"
+SCRATCH = ("matrix_scratch.jsonl", "matrix_scratch_summary.json")
+OFFICIAL = ("official_matrix_oct25.jsonl", "matrix_summary.json")
+
+
+def output_paths(official: bool, force: bool) -> tuple[Path, Path]:
+    """(runs file, summary file). The official pair needs --official, and
+    --force as well once the official runs file exists."""
+    runs, summary = (RESULTS / n for n in (OFFICIAL if official else SCRATCH))
+    if official and runs.exists() and not force:
+        sys.exit(f"{runs.name} already exists. It is the official run. "
+                 "Add --force to overwrite it and matrix_summary.json.")
+    return runs, summary
+
+
+def _shown(path: Path) -> str:
+    return os.path.relpath(path, RESULTS.parent)
 
 
 def scored_scenarios() -> dict[str, dict]:
@@ -114,31 +131,32 @@ def print_table(summary: dict) -> None:
 
 
 def finish(lines: list[dict], columns: list[tuple[str, str, str]],
-           scenarios: list[str], repeats: int) -> None:
+           scenarios: list[str], repeats: int, runs_file: Path, summary_file: Path) -> None:
     summary = summarize(lines, columns, scenarios, repeats)
-    SUMMARY_FILE.write_text(json.dumps(summary, indent=2) + "\n")
+    summary_file.write_text(json.dumps(summary, indent=2) + "\n")
     print_table(summary)
-    print(f"\nRuns -> {RUNS_FILE.relative_to(RESULTS.parent)}, "
-          f"summary -> {SUMMARY_FILE.relative_to(RESULTS.parent)}")
+    print(f"\nRuns -> {_shown(runs_file)}, summary -> {_shown(summary_file)}")
 
 
-def rescore(all_scenarios: dict[str, dict]) -> None:
-    """Recompute every check on the saved runs and rewrite matrix.jsonl."""
-    lines = [json.loads(l) for l in RUNS_FILE.read_text().splitlines() if l.strip()]
+def rescore(all_scenarios: dict[str, dict], runs_file: Path, summary_file: Path) -> None:
+    """Recompute every check on the saved runs and rewrite the runs file."""
+    if not runs_file.exists():
+        sys.exit(f"No runs file at {_shown(runs_file)}.")
+    lines = [json.loads(l) for l in runs_file.read_text().splitlines() if l.strip()]
     if not lines:
-        sys.exit(f"No runs in {RUNS_FILE}.")
+        sys.exit(f"No runs in {_shown(runs_file)}.")
     for line in lines:
         line["checks"] = run_checks(line, all_scenarios[line["scenario"]])
-    tmp = RUNS_FILE.with_suffix(".tmp")
+    tmp = runs_file.with_suffix(".tmp")
     tmp.write_text("".join(json.dumps(l) + "\n" for l in lines))
-    tmp.replace(RUNS_FILE)
+    tmp.replace(runs_file)
 
     alias = {os.getenv(env): name for name, env in ALIASES.items()}
     columns = list(dict.fromkeys(
         (f"{alias.get(l['model'], l['model'])} {l['prompt_version']}", l["model"], l["prompt_version"])
         for l in lines))
     scenarios = list(dict.fromkeys(l["scenario"] for l in lines))
-    finish(lines, columns, scenarios, max(l["repeat"] for l in lines))
+    finish(lines, columns, scenarios, max(l["repeat"] for l in lines), runs_file, summary_file)
 
 
 def main() -> None:
@@ -151,11 +169,16 @@ def main() -> None:
                         choices=list(all_scenarios))
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--rescore", action="store_true",
-                        help="recompute checks from results/matrix.jsonl without calling models")
+                        help="recompute checks on the saved runs without calling models")
+    parser.add_argument("--official", action="store_true",
+                        help="write the official files instead of the scratch files")
+    parser.add_argument("--force", action="store_true",
+                        help="with --official, overwrite the existing official run")
     args = parser.parse_args()
+    runs_file, summary_file = output_paths(args.official, args.force)
 
     if args.rescore:
-        rescore(all_scenarios)
+        rescore(all_scenarios, runs_file, summary_file)
         return
 
     if not os.getenv("NEBIUS_API_KEY"):
@@ -166,7 +189,8 @@ def main() -> None:
     lines: list[dict] = []
     RESULTS.mkdir(exist_ok=True)
 
-    with RUNS_FILE.open("a") as f:
+    # A new official run replaces the old one; scratch runs accumulate.
+    with runs_file.open("w" if args.official else "a") as f:
         for scenario in args.scenarios:
             expected = all_scenarios[scenario]
             for label, model, prompt in columns:
@@ -181,7 +205,7 @@ def main() -> None:
                     print(f"[{len(lines):>3}/{total}] {scenario:22} {label:14} #{repeat}  "
                           f"fails: {', '.join(fails) or 'none'}", flush=True)
 
-    finish(lines, columns, args.scenarios, args.repeats)
+    finish(lines, columns, args.scenarios, args.repeats, runs_file, summary_file)
 
 
 if __name__ == "__main__":

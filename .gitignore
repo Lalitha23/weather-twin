@@ -9,3 +9,4 @@ results/*.jsonl
 !results/official_matrix_oct25.jsonl
 !results/.gitkeep
 .streamlit/secrets.toml
+results/matrix_scratch_summary.json
