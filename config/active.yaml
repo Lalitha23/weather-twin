@@ -1,0 +1,4 @@
+# The setup Today runs, and the "current" side of every lab comparison.
+# model is an alias resolved from .env (nemotron -> NEMOTRON_MODEL, compare -> COMPARE_MODEL).
+model: nemotron
+prompt_version: v2
