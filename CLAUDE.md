@@ -120,7 +120,7 @@ Work one step at a time. Finish and commit each step before starting the next.
 7b. Live comparison in Test Lab, behind the password (a simple shared password, not auth).
     Today and the lab share one Streamlit process, so the live comparison must pass the scenario and
     backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars. (done)
-7c. Deploy to Streamlit Cloud.
+7c. Deploy to Streamlit Cloud. Steps in docs/DEPLOY.md; secrets listed in .streamlit/secrets.example.toml.
     Build target for 7a and 7b: docs/DESIGN.md, with screenshots in docs/design/.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
 

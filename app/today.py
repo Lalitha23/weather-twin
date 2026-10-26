@@ -94,14 +94,12 @@ def lock_card(key: str, text: str = LOCK_TEXT_TODAY) -> None:
     with st.container(key=f"lockcard_{key}"):
         md('<h3 style="margin:0 0 6px;font-size:18px;">Enter your password</h3>'
            f'<p class="muted" style="margin:0 0 12px;">{esc(text)}</p>')
-        if not password:
-            md('<div class="note-orange">This isn\'t set up yet. APP_PASSWORD is missing.</div>')
-            return
         with st.form(f"unlock_{key}", border=False):
             entered = st.text_input("Password", type="password", label_visibility="collapsed",
                                     placeholder="Password")
             if st.form_submit_button("Unlock", type="primary", use_container_width=True):
-                if hmac.compare_digest(entered.encode(), password.encode()):
+                # No APP_PASSWORD set means nothing unlocks: the page fails closed.
+                if password and hmac.compare_digest(entered.encode(), password.encode()):
                     st.session_state["unlocked"] = True
                     st.rerun()
                 st.error("That password didn't work.")

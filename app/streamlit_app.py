@@ -20,7 +20,8 @@ def load_secrets() -> None:
     load_dotenv(ROOT / ".env")
     try:
         for key, value in st.secrets.items():
-            if isinstance(value, (str, int, float, bool)):
+            # Empty values are skipped so a half-filled secrets file keeps the defaults.
+            if isinstance(value, (str, int, float, bool)) and str(value) != "":
                 os.environ.setdefault(key, str(value))
     except Exception:  # no secrets file locally
         pass
