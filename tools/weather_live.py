@@ -4,13 +4,14 @@ fetch_raw() returns the untouched Open-Meteo JSON.
 parse() turns that JSON into the tool output. The twin backend reuses
 parse() on recorded responses, so live and twin match field for field.
 """
+from pathlib import Path
 from typing import Any
 
 import requests
+import yaml
 
 URL = "https://api.open-meteo.com/v1/forecast"
-LATITUDE = 47.674  # Redmond, WA
-LONGITUDE = -122.121
+ACTIVE_FILE = Path(__file__).resolve().parent.parent / "config" / "active.yaml"
 TIMEZONE = "America/Los_Angeles"
 TIMEOUT_S = 10
 RAIN_WINDOW_HOURS = 6
@@ -48,11 +49,17 @@ WEATHER_CODES: dict[int, str] = {
 }
 
 
+def load_location(path: Path = ACTIVE_FILE) -> dict[str, Any]:
+    """The location block from config/active.yaml: name, zip, latitude, longitude."""
+    return yaml.safe_load(path.read_text())["location"]
+
+
 def fetch_raw() -> dict[str, Any]:
     """Call Open-Meteo once and return the raw JSON. Raises requests errors."""
+    location = load_location()
     params = {
-        "latitude": LATITUDE,
-        "longitude": LONGITUDE,
+        "latitude": location["latitude"],
+        "longitude": location["longitude"],
         "timezone": TIMEZONE,
         "wind_speed_unit": "kmh",
         "current": "temperature_2m,wind_speed_10m,weather_code",

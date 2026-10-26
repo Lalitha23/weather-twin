@@ -17,10 +17,29 @@ from agents.summarizer import make_client, run_summarizer
 from app.report_data import load_active
 from app.ui import esc, json_block, md
 from checks.checks import numbers_match_tool
+from tools.weather_live import load_location
 
 ALIASES = {"nemotron": "NEMOTRON_MODEL", "compare": "COMPARE_MODEL"}
 PACIFIC = ZoneInfo("America/Los_Angeles")
 CACHE_S = 30 * 60
+
+# Friendlier words for the Today card only. The tool's conditions text is unchanged.
+DISPLAY_CONDITIONS = {
+    "clear sky": "Clear",
+    "mainly clear": "Mostly clear",
+    "overcast": "Cloudy",
+    "fog": "Foggy",
+    "freezing fog": "Icy fog",
+    "drizzle": "Drizzle",
+    "light freezing drizzle": "Light icy drizzle",
+    "freezing drizzle": "Icy drizzle",
+    "light freezing rain": "Light icy rain",
+    "freezing rain": "Icy rain",
+    "snow grains": "Light snow",
+    "light showers": "Light showers",
+    "thunderstorm with hail": "Thunderstorm, hail",
+    "thunderstorm with heavy hail": "Thunderstorm, heavy hail",
+}
 
 MSG_WEATHER = "Couldn't reach the weather service. Try Refresh in a minute."
 MSG_MODEL = "Couldn't reach the model on Token Factory. Try Refresh in a minute."
@@ -86,6 +105,12 @@ def _locked() -> None:
        'Test Lab stays open to everyone. It only shows saved results.</p>')
 
 
+def display_conditions(text: str | None) -> str:
+    if not text:
+        return ""
+    return DISPLAY_CONDITIONS.get(text.lower(), text[0].upper() + text[1:])
+
+
 def _fmt(value, unit: str) -> str:
     return "–" if value is None else f"{value:g}{unit}"
 
@@ -101,9 +126,11 @@ def _weather_card(r: dict) -> None:
     if r["numbers"]["result"] == "fail":
         note = '<div class="note-orange">Agent 1 reported different numbers. See Agent 1 summary.</div>'
     temp = "–" if tool.get("temperature_c") is None else f"{round(tool['temperature_c'])}°"
+    loc = load_location()
     md(f"""<div class="card">
+  <div class="place">{esc(loc['name'])} {esc(loc['zip'])}</div>
   <div class="weather-top"><span>{esc(day)} · {esc(tool.get('time_of_day') or '')}</span>
-    <span class="cond">{esc((tool.get('conditions') or '').capitalize())}</span></div>
+    <span class="cond">{esc(display_conditions(tool.get('conditions')))}</span></div>
   <div class="weather-main"><div class="temp">{temp}<span style="font-size:24px;">C</span></div>
     <div class="wx-side">Rain {_fmt(tool.get('rain_chance_pct'), '%')}<br>Wind {_fmt(tool.get('wind_kph'), ' km/h')}</div></div>
   {note}

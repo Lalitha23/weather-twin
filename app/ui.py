@@ -42,6 +42,7 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .st-key-today { max-width:480px; margin:0 auto; width:100%; }
 
 /* Today */
+.place { font-size:15px; font-weight:600; color:var(--ink); margin-bottom:4px; }
 .weather-top { display:flex; justify-content:space-between; gap:12px; font-size:14px; color:var(--muted); }
 .weather-main { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-top:8px; }
 .temp { font-family:var(--mono); font-size:64px; line-height:1; font-weight:500; letter-spacing:-.02em; }

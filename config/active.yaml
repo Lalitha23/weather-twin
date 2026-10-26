@@ -2,3 +2,10 @@
 # model is an alias resolved from .env (nemotron -> NEMOTRON_MODEL, compare -> COMPARE_MODEL).
 model: nemotron
 prompt_version: v2
+
+# Where Today's weather comes from. The live weather tool reads these coordinates.
+location:
+  name: Redmond, WA
+  zip: "98052"
+  latitude: 47.674
+  longitude: -122.121

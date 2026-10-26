@@ -92,7 +92,8 @@ Record one real Open-Meteo response, save as a twin file, run both backends thro
 Outputs must match field for field. Every scenario file must pass the same schema as the live response.
 
 ## Location
-Redmond, WA: latitude 47.674, longitude -122.121. Use metric units.
+Redmond, WA 98052: latitude 47.674, longitude -122.121. Use metric units.
+The location lives in config/active.yaml; the live weather tool and the Today card both read it.
 
 ## Conventions
 - Python 3.11+, type hints, small functions, no frameworks beyond requirements.txt.
