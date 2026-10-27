@@ -6,8 +6,10 @@ Weather Twin copies a small two agent workflow and swaps its live weather tool f
 
 Built for the Nebius x NVIDIA Global AI Hackathon 2026.
 
-## Status
-Work in progress.
+## Live demo
+The app has two tabs.
+- **Today** shows the agents' run for Redmond, WA. It is a cached run: the agents run once a day and the result is saved, so the page stays open to everyone without the Token Factory credits being misused. Refreshing it early is password protected.
+- **Test Lab** shows the saved official results and is open to everyone. The live comparison inside it is password protected.
 
 ## Setup
 ```bash

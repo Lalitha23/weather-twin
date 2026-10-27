@@ -1,8 +1,9 @@
-"""Today tab: the live agent, behind a simple shared password (not auth).
+"""Today tab: the live agent, run once a day and shown to everyone.
 
-Nothing calls a model until the password is entered. One live run is cached
-for 30 minutes. Failures raise TodayError so they are never cached, and the
-page only ever shows a friendly message.
+The first visit of each Pacific day runs the agents; everyone after that sees
+the cached run. Refresh is behind a simple shared password (not auth), so
+visitors can't spend credits. Failures raise TodayError so they are never
+cached, and the page only ever shows a friendly message.
 """
 import hmac
 import os
@@ -22,7 +23,11 @@ from tools.weather_live import load_location
 
 ALIASES = {"nemotron": "NEMOTRON_MODEL", "compare": "COMPARE_MODEL"}
 PACIFIC = ZoneInfo("America/Los_Angeles")
-CACHE_S = 30 * 60
+# One run per Pacific day: the date is part of the cache key, the TTL is a backstop.
+CACHE_S = 26 * 60 * 60
+CACHE_NOTE = ("This is a cached run. Today runs the agents once a day and saves the result, "
+              "so the page stays open to everyone without the credits being misused. "
+              "Refresh is password protected.")
 
 # Friendlier words for the Today card only. The tool's conditions text is unchanged.
 DISPLAY_CONDITIONS = {
@@ -42,9 +47,9 @@ DISPLAY_CONDITIONS = {
     "thunderstorm with heavy hail": "Thunderstorm, heavy hail",
 }
 
-MSG_WEATHER = "Couldn't reach the weather service. Try Refresh in a minute."
-MSG_MODEL = "Couldn't reach the model on Token Factory. Try Refresh in a minute."
-MSG_SHAPE = "The agent's answer came back in the wrong shape. Try Refresh."
+MSG_WEATHER = "Couldn't reach the weather service. Try again in a minute."
+MSG_MODEL = "Couldn't reach the model on Token Factory. Try again in a minute."
+MSG_SHAPE = "The agent's answer came back in the wrong shape. Try again in a minute."
 MSG_SETUP = "Today isn't set up yet. The model setting is missing."
 
 
@@ -101,8 +106,13 @@ def _friendly(error: str) -> str:
     return MSG_MODEL if error.startswith("api_error") else MSG_SHAPE
 
 
-@st.cache_data(ttl=CACHE_S, show_spinner=False)
-def run_today(model_alias: str, prompt_version: str) -> dict:
+def pacific_day() -> str:
+    return datetime.now(PACIFIC).date().isoformat()
+
+
+@st.cache_data(ttl=CACHE_S, max_entries=4, show_spinner=False)
+def run_today(model_alias: str, prompt_version: str, day: str) -> dict:
+    """day is only the cache key, so a new Pacific day starts a new run."""
     model = os.getenv(ALIASES.get(model_alias, ""), "") if model_alias in ALIASES else model_alias
     if not model:
         raise TodayError(MSG_SETUP, f"Setup · no model ID for {model_alias!r}")
@@ -132,7 +142,7 @@ def run_today(model_alias: str, prompt_version: str) -> dict:
     }
 
 
-LOCK_TEXT_TODAY = ("Today runs the live agent on Nebius Token Factory. "
+LOCK_TEXT_TODAY = ("Refresh runs the live agent again on Nebius Token Factory. "
                    "The password keeps strangers from spending your credits.")
 
 
@@ -153,10 +163,9 @@ def lock_card(key: str, text: str = LOCK_TEXT_TODAY) -> None:
                 st.error("That password didn't work.")
 
 
-def _locked() -> None:
-    lock_card("today")
-    md('<p class="muted" style="text-align:center;margin-top:12px;font-size:14px;">'
-       'Test Lab stays open to everyone. It only shows saved results.</p>')
+def _refresh_lock() -> None:
+    with st.expander(":material/lock: Refresh (password)", expanded=False):
+        lock_card("today")
 
 
 def display_conditions(text: str | None) -> str:
@@ -224,29 +233,30 @@ def _agent2_card(r: dict) -> str:
             f'<div class="label">Why</div><div style="font-size:15px;">{esc(a["why"])}</div></div>')
 
 
-def _unlocked() -> None:
+def _today() -> None:
     active = load_active()
     try:
         with st.spinner("Checking today's weather…"):
-            r = run_today(active["model"], active["prompt_version"])
+            r = run_today(active["model"], active["prompt_version"], pacific_day())
     except TodayError as e:
         _error(str(e), e.detail)
         return
     except Exception as e:  # never show a stack trace
-        _error("Something went wrong. Try Refresh in a minute.",
+        _error("Something went wrong. Try again in a minute.",
                safe_detail(f"{type(e).__name__}: {e}"))
         return
 
     md(f'<div class="flow">{_weather_card(r)}{_agent1_card(r)}{_handoff()}{_agent2_card(r)}</div>')
-    updated = datetime.fromtimestamp(r["fetched_at"], PACIFIC).strftime("%H:%M")
+    updated = datetime.fromtimestamp(r["fetched_at"], PACIFIC).strftime("%a %b %-d, %H:%M PT")
     with st.container(key="footer_line"):
         md(f'<p class="muted mono" style="margin:0 0 8px;font-size:13px;">{r["tokens"]:,} tokens · '
-           f'{r["latency_s"]:.1f} s · Cached · updated {updated}</p>')
+           f'{r["latency_s"]:.1f} s · Cached run · updated {updated}</p>'
+           f'<p class="muted" style="margin:0 0 8px;font-size:13px;">{esc(CACHE_NOTE)}</p>')
         _refresh_button()
 
 
 def _error(message: str, detail: str) -> None:
-    """Friendly card, then a collapsed Details line. Only reached after unlock."""
+    """Friendly card, then a collapsed Details line."""
     md(f'<div class="card err">{esc(message)}</div>')
     if detail:
         with st.expander("Details", expanded=False):
@@ -255,15 +265,15 @@ def _error(message: str, detail: str) -> None:
 
 
 def _refresh_button() -> None:
+    """Refresh clears the shared cache and spends credits, so it needs the password."""
+    if not st.session_state.get("unlocked"):
+        _refresh_lock()
+        return
     if st.button("Refresh", use_container_width=True):
         run_today.clear()
         st.rerun()
 
 
 def render() -> None:
-    if st.session_state.get("unlocked"):
-        with st.container(key="today_flow"):
-            _unlocked()
-    else:
-        with st.container(key="today"):
-            _locked()
+    with st.container(key="today_flow"):
+        _today()

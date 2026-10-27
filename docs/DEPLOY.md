@@ -49,8 +49,8 @@ still works, because it only reads committed files in `results/`.
 Open the app URL on a laptop and on your phone.
 
 **Without the password (what judges see first)**
-- [ ] Today shows the "Enter your password" card and nothing else.
-- [ ] A wrong password says "That password didn't work." and stays locked.
+- [ ] Today shows "Redmond, WA 98052", the agent flow, "Cached run · updated …" and the cached-run note.
+- [ ] Refresh is a collapsed "Refresh (password)" section. A wrong password says "That password didn't work." and stays locked.
 - [ ] Test Lab › Official report shows the dark decision card "Ship Nemotron 3 Ultra with prompt v2",
       the results table (Nemotron v1 handoff_clean "3 of 12", Nemotron v2 "12 of 12"),
       and the gpt-oss v2 "misleading alone" cell.
@@ -60,9 +60,7 @@ Open the app URL on a laptop and on your phone.
 - [ ] On the phone, nothing scrolls sideways except the results table inside its own box.
 
 **With the password**
-- [ ] Today shows "Redmond, WA 98052", the temperature, Jacket and Umbrella tiles, and a Why card.
-      The footer shows the Nemotron model, prompt v2, tokens and "Cached · updated HH:MM".
-- [ ] Refresh runs it again (this spends a few thousand tokens).
+- [ ] Today shows a plain Refresh button. Refresh runs it again (this spends a few thousand tokens).
 - [ ] Live comparison shows Current (Nemotron 3 Ultra, v2) and Candidate 1 with
       "✓ Real tool calls work".
 - [ ] Optional small run: keep only `snow` and `injection_holdout`, Repeats 1, then Run comparison.

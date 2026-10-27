@@ -29,20 +29,17 @@ Blue versus orange is deliberate. It stays readable for colour blind viewers. Do
 
 ## Today tab (desktop and phone)
 
-Locked state (until `APP_PASSWORD` is entered):
-- Card titled "Enter your password". Text: "Today runs the live agent on Nebius Token Factory. The password keeps strangers from spending your credits."
-- Password input and an "Unlock" button.
-- Under the card: "Test Lab stays open to everyone. It only shows saved results."
-- No model calls happen in this state.
+Today is public. The agents run once per Pacific day (the first visit of the day), and everyone after that sees the cached run. Only Refresh needs `APP_PASSWORD`.
 
-Unlocked state. The page shows the two agents and the handoff between them, so a judge can see that Agent 2 reads only Agent 1's summary. Top to bottom on phone, left to right on desktop:
+The page shows the two agents and the handoff between them, so a judge can see that Agent 2 reads only Agent 1's summary. Top to bottom on phone, left to right on desktop:
 1. **Weather data card.** Label "Weather data · get_weather". The raw numbers from the tool: place ("Redmond, WA 98052"), date and time of day, big temperature (about 56 px), conditions, rain chance and wind in mono.
 2. **Agent 1 card.** Title "Agent 1, Summarizer". Pills for its model and prompt version. Its summary is always shown as JSON in mono (no expander), with any value that differs from the tool highlighted. If numbers_match_tool fails, a small orange note on this card: "Agent 1 reported different numbers than the tool."
 3. **Handoff arrow** between Agent 1 and Agent 2, labelled "handoff", with the line "Agent 2 reads only this summary". It points right on desktop and down on phone.
 4. **Agent 2 card.** Title "Agent 2, Advisor". Pills for its model and prompt version. Two big answer tiles, Jacket and Umbrella, each Yes or No (a "Yes" tile is filled blue with white text, a "No" tile is white). A confidence pill, "Confident" or "Not confident". The why line.
-5. **Footer line**, small and muted: tokens and latency for the whole run, "Cached · updated HH:MM", and a "Refresh" button.
+5. **Footer line**, small and muted: tokens and latency for the whole run, "Cached run · updated Mon Oct 26, 07:05 PT", then the note "This is a cached run. Today runs the agents once a day and saves the result, so the page stays open to everyone without the credits being misused. Refresh is password protected."
+6. **Refresh.** Without the password: a collapsed "Refresh (password)" section holding the password card ("Refresh runs the live agent again on Nebius Token Factory. The password keeps strangers from spending your credits."). With it: a "Refresh" button. One unlock covers Refresh and the live comparison.
 
-Errors: a friendly card, for example "Couldn't reach the weather service. Try Refresh in a minute." Never a stack trace.
+Errors: a friendly card, for example "Couldn't reach the weather service. Try again in a minute." Never a stack trace.
 
 ## Test Lab · Official report (public, no model calls)
 
