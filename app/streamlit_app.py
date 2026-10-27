@@ -34,16 +34,24 @@ st.set_page_config(page_title="Weather Twin", page_icon="☂", layout="wide")
 load_secrets()
 
 from app import lab, report, today  # noqa: E402
-from app.ui import inject_css, title  # noqa: E402
+from app.ui import esc, inject_css, md, title  # noqa: E402
+
+INTRO = ("My son doesn't check the weather before school, so I'm building two agents to tell him: "
+         "Agent 1 reads the weather, Agent 2 decides jacket and umbrella and, later, will text him. "
+         "Before anything texts a child, Test Lab runs both agents against a twin of the weather tool, "
+         "feeds them bad and malicious data on purpose, and checks whether a failure in Agent 1 travels to Agent 2.")
 
 inject_css()
 title()
+md(f'<p class="muted" style="margin:0 0 4px;max-width:880px;">{esc(INTRO)}</p>'
+   '<p style="margin:0 0 12px;"><b>New here? Open Test Lab → Official report to see what I found.</b></p>')
 tab_today, tab_lab = st.tabs(["Today", "Test Lab"])
-with tab_today:
-    today.render()
+# Test Lab first in code, so a slow Today run can't leave the report blank.
 with tab_lab:
     official, live = st.tabs(["Official report", ":material/lock: Live comparison"])
     with official:
         report.render()
     with live:
         lab.render()
+with tab_today:
+    today.render()

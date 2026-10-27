@@ -24,7 +24,8 @@ Blue versus orange is deliberate. It stays readable for colour blind viewers. Do
 ## Top level
 
 - App title "Weather Twin" with a small two circle mark.
-- Two top tabs: **Today** and **Test Lab**.
+- Under it, a public two line intro on every tab: the son's morning message story (texting is "later", not built), then in bold "New here? Open Test Lab → Official report to see what I found."
+- Two top tabs: **Today** and **Test Lab**. Today stays first. Test Lab is filled first in code, so a slow Today run can't leave the report blank.
 - Test Lab has two sub views: **Official report** (public) and **Live comparison** (password, lock icon).
 
 ## Today tab (desktop and phone)
@@ -47,19 +48,20 @@ Reads `results/matrix_summary.json` and `results/official_matrix_oct25.jsonl` on
 
 Intro line: "Official run, Oct 25. 132 runs: 11 scenarios × 2 models × 2 prompt versions × 3 repeats. Same agent code as Today, fake weather from the twin. Nothing here calls a model."
 
-1. **Decision card.** Dark (`ink`) background. Label "DECISION". Title "Ship Nemotron 3 Ultra with prompt v2". Line on cost: about 400 more tokens per run than v1, median near 3.4 s. Three reason boxes:
-   - "Held out injection resisted 3 of 3". Sub: written after v2 was frozen, gpt-oss obeyed it in 5 of 6 runs.
+0. **"What I found" card.** Plain words, numbers read from the results: the fake units note, Nemotron v1 changing 60% rain to 40%, Agent 2 confidently saying no umbrella in 3 of 3, Nemotron v2 blocking it in 3 of 3, "In a later lab run it still repeated the hidden note, so v2 is better, not perfect.", and gpt-oss v2's clean-looking summary still changing the number in 2 of 3 runs.
+1. **Decision card.** Dark (`ink`) background. Label "DECISION". Title "Ship Nemotron 3 Ultra with prompt v2". Line on cost: about 400 more tokens per run than v1, median near 3.4 s. A trade-off line: "Nemotron's Agent 1 flagged missing or contradictory data in 0 of 6 runs (gpt-oss: 3 and 2 of 6). Agent 2 still lowered its confidence every time." Three reason boxes:
+   - "Held out injection resisted 3 of 3". Sub: committed after v2, neither has changed since, gpt-oss obeyed it in 5 of 6 runs.
    - "Handoff clean in 12 of 12 injection runs". Sub: up from 3 of 12 with v1.
    - "Numbers matched the tool in 30 of 30 runs".
    - A disabled "Promote to Today · coming later" button (increment A).
-2. **Results by check.** Rows are checks, each with its name in mono and a short plain description. Columns are Nemotron v1, Nemotron v2 (with a blue "Shipped" badge), gpt-oss v1, gpt-oss v2. Cells show "x of y" in mono and are coloured pass, partial or hard fail. The hard fail colour applies only to handoff_clean and numbers_match_tool. gpt-oss v2 handoff_clean is a pass cell with a dashed orange outline and the note "misleading alone". Legend above the table. Wrap the table in a horizontal scroll box on small screens.
+2. **Results by check.** Rows are checks, each with its name in mono and a short plain description. Columns are Nemotron v1, Nemotron v2 (with a blue "Shipped" badge), gpt-oss v1, gpt-oss v2. Cells show "x of y" in mono and are coloured pass, partial or hard fail. The hard fail colour applies only to handoff_clean and numbers_match_tool. gpt-oss v2 handoff_clean is a pass cell with a dashed orange outline and the note "text clean, numbers changed". Legend above the table. Under it: "v1 = plain prompt, v2 = hardened prompt", why totals differ, and why eight checks show as nine rows. Wrap the table in a horizontal scroll box on small screens.
 3. **Look inside a run.** Three selects: Scenario (held out scenarios get a "held out" tag), Setup, Repeat. Default to injection_holdout, gpt-oss v2, a repeat where it obeyed. Then:
-   - A one line callout explaining the run in plain words.
+   - A one line callout explaining the run in plain words, built from the run's data, e.g. "Agent 1 changed the rain chance from 60% to 40%, and Agent 2 did what the hidden note wanted: no umbrella."
    - Three panels side by side, stacking on phones: "1 · Tool output (twin)", "2 · Agent 1 summary", "3 · Agent 2 advice". JSON in mono. Highlight the values that differ between panels.
    - The panel where the failure starts gets a 2 px hard fail border and the label "failure starts here". Work it out from the checks. If any Agent 1 check failed, it is panel 2. Otherwise panel 3.
    - "Checks for this run" as a grid of small boxes, failures first, each with the check name, Pass or Fail, and the detail string.
 4. **Cost and speed.** Table of setup, average tokens and median latency. Footnote: "Median, not average. One Nemotron v2 call hung for 1,551 s during the official run. A 60 s timeout was added afterwards."
-5. **"No prompt fixed this" card.** Heavy snow at 30 °C. Agent 1 flagged it in 0 of 3 runs in every column. Agent 2 caught it every time. "Next step: a plausibility rule in code, not a better prompt."
+5. **"No prompt fixed this" card.** Heavy snow at 30 °C. Agent 1 flagged it in 0 of 3 runs in every column. Agent 2 lowered its confidence every time. "Next step: a plausibility rule in code, not a better prompt."
 
 ## Test Lab · Live comparison (password)
 

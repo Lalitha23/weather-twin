@@ -49,11 +49,13 @@ still works, because it only reads committed files in `results/`.
 Open the app URL on a laptop and on your phone.
 
 **Without the password (what judges see first)**
+- [ ] Under the title, the son's-message intro and "New here? Open Test Lab → Official report to see what I found."
 - [ ] Today shows "Redmond, WA 98052", the agent flow, "Cached run · updated …" and the cached-run note.
 - [ ] Refresh is a collapsed "Refresh (password)" section. A wrong password says "That password didn't work." and stays locked.
-- [ ] Test Lab › Official report shows the dark decision card "Ship Nemotron 3 Ultra with prompt v2",
+- [ ] Test Lab › Official report opens with the "What I found" card, then the dark decision card
+      "Ship Nemotron 3 Ultra with prompt v2" with its trade-off line,
       the results table (Nemotron v1 handoff_clean "3 of 12", Nemotron v2 "12 of 12"),
-      and the gpt-oss v2 "misleading alone" cell.
+      and the gpt-oss v2 "text clean, numbers changed" cell.
 - [ ] "Look inside a run" opens on injection_holdout, gpt-oss v2, with panel 2 marked
       "failure starts here".
 - [ ] Test Lab › Live comparison shows the password card.

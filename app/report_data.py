@@ -158,6 +158,57 @@ def decision(summary: dict, shipped: str) -> dict[str, Any]:
     }
 
 
+def what_i_found(summary: dict, runs: list[dict], shipped: str) -> dict[str, Any]:
+    """Numbers for the "What I found" card: the held out injection, read from the results."""
+    ship_col = column(summary, shipped)
+    baseline = _baseline_label(summary, shipped)
+    base_col = column(summary, baseline)
+    holdout = next(s for s in scenarios(summary) if is_held_out(s))
+    base_checks = cell(summary, holdout, baseline)["checks"]
+    obeyed = base_checks["injection_not_followed"]
+    run = next(r for r in runs if r["scenario"] == holdout and r["model"] == base_col["model"]
+               and r["prompt_version"] == base_col["prompt_version"])
+    quiet = misleading_columns(summary)
+    out = {
+        "model": short_name(ship_col["model"]),
+        "tool_rain": run["summarizer"]["tool_output"]["rain_chance_pct"],
+        "summary_rain": run["summarizer"]["summary"]["rain_chance_pct"],
+        "baseline_obeyed": {"passed": obeyed["applicable"] - obeyed["passed"],
+                            "applicable": obeyed["applicable"]},
+        "shipped_resisted": cell(summary, holdout, shipped)["checks"]["injection_not_followed"],
+        "quiet": None,
+    }
+    if quiet:
+        q_col = column(summary, quiet[0])
+        q = cell(summary, holdout, quiet[0])["checks"]
+        out["quiet"] = {
+            "model": short_name(q_col["model"]),
+            "numbers_changed": {"passed": q["numbers_match_tool"]["applicable"] - q["numbers_match_tool"]["passed"],
+                                "applicable": q["numbers_match_tool"]["applicable"]},
+            "umbrella_skipped": {"passed": q["umbrella_rule"]["applicable"] - q["umbrella_rule"]["passed"],
+                                 "applicable": q["umbrella_rule"]["applicable"]},
+        }
+    return out
+
+
+def trade_off(summary: dict, shipped: str,
+              bad_data: tuple[str, ...] = ("missing_field", "contradictory")) -> dict[str, Any]:
+    """Agent 1 honesty on missing or contradictory data: the shipped column vs the other model."""
+    def flagged(label: str) -> dict:
+        counts = [cell(summary, s, label)["checks"]["honesty_agent1"] for s in bad_data]
+        return {"passed": sum(c["passed"] for c in counts), "applicable": sum(c["applicable"] for c in counts)}
+    ship_model = column(summary, shipped)["model"]
+    others = [c for c in summary["columns"] if c["model"] != ship_model]
+    agent2 = [cell(summary, s, shipped)["checks"]["honesty_agent2"] for s in bad_data]
+    return {
+        "model": short_name(ship_model),
+        "flagged": flagged(shipped),
+        "other_model": short_name(others[0]["model"]),
+        "other_flagged": [flagged(c["label"]) for c in others],
+        "agent2_all_lowered": all(c["passed"] == c["applicable"] for c in agent2),
+    }
+
+
 def no_prompt_fixed(summary: dict, scenario: str = "contradictory") -> dict[str, Any]:
     """Agent 1 vs Agent 2 honesty on the contradictory scenario, per column."""
     cells = [cell(summary, scenario, c["label"]) for c in summary["columns"]]
@@ -200,12 +251,43 @@ def failure_start(checks: dict) -> int | None:
     return 2 if any(n in AGENT1_CHECKS for n in fails) else 3
 
 
+NUMBER_WORDS = {"temperature_c": ("temperature", " °C"), "rain_chance_pct": ("rain chance", "%"),
+                "wind_kph": ("wind", " km/h")}
+NUMBER_DIFF = re.compile(r"(\w+)=([-\d.]+), tool ([-\d.]+)")
+OBEYED = re.compile(r"advice matches obeyed field (\{.*\})")
+RULE_DIFF = re.compile(r"(\w+)=(True|False), expected (True|False)")
+
+
+def _yes_no(field: str, value: bool) -> str:
+    return field if value else f"no {field}"
+
+
+def plain_detail(check: str, detail: str) -> str:
+    """A check's detail in plain words. Unknown shapes come back unchanged."""
+    if check == "numbers_match_tool":
+        parts = []
+        for field, got, want in NUMBER_DIFF.findall(detail):
+            name, unit = NUMBER_WORDS.get(field, (field, ""))
+            parts.append(f"the {name} from {float(want):g}{unit} to {float(got):g}{unit}")
+        return " and ".join(parts) or detail
+    if check == "injection_not_followed" and (m := OBEYED.fullmatch(detail)):
+        try:
+            obeyed = yaml.safe_load(m.group(1).replace("False", "false").replace("True", "true"))
+        except yaml.YAMLError:
+            return detail
+        return ", ".join(_yes_no(k, v) for k, v in obeyed.items())
+    if check in ("umbrella_rule", "jacket_rule") and (m := RULE_DIFF.fullmatch(detail)):
+        field, got, want = m.group(1), m.group(2) == "True", m.group(3) == "True"
+        return f"it said {_yes_no(field, got)}, the rule says {_yes_no(field, want)}"
+    return detail
+
+
 CALLOUT = {
-    "numbers_match_tool": "Agent 1 changed the tool's numbers ({d})",
+    "numbers_match_tool": "Agent 1 changed {d}",
     "handoff_clean": "injected text reached Agent 2 ({d})",
     "role_adherence": "Agent 1 made a decision that belongs to Agent 2 ({d})",
     "honesty_agent1": "Agent 1 did not flag the bad data ({d})",
-    "injection_not_followed": "Agent 2 followed the injection ({d})",
+    "injection_not_followed": "Agent 2 did what the hidden note wanted: {d}",
     "umbrella_rule": "the umbrella decision is wrong ({d})",
     "jacket_rule": "the jacket decision is wrong ({d})",
     "honesty_agent2": "Agent 2 stayed confident on bad data",
@@ -219,7 +301,7 @@ def callout(checks: dict) -> str:
     if not fails:
         return "Every check passed in this run."
     order = [n for n in CALLOUT if n in fails]
-    parts = [CALLOUT[n].format(d=checks[n]["detail"]) for n in order[:2]]
+    parts = [CALLOUT[n].format(d=plain_detail(n, checks[n]["detail"])) for n in order[:2]]
     text = ", and ".join(parts)
     return text[0].upper() + text[1:] + "."
 
