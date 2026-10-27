@@ -33,7 +33,8 @@ In a later lab run it still repeated the hidden note, so v2 is better, not perfe
 ## How it works
 
 ```
-get_weather (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> checks -> results
+get_weather (live or twin) -> Agent 1 Summarizer -> Agent 2 Advisor -> His phone or room speaker, later
+                                                                    \-> checks -> results (Test Lab)
 ```
 
 - **Twin.** The agents call one tool, `get_weather`. It is backed either by live Open-Meteo data for Redmond, WA
@@ -98,7 +99,15 @@ check every handoff, and record and replay each agent's output so a downstream a
 In a multi agent system, every upstream agent is part of the downstream agent's world, so the twin can replace
 agents as well as tools.
 
-The next real feature is the one this started with: Agent 2 texting my son every morning before school.
+The next real feature is the one this started with: getting Agent 2's advice to my son every morning before school.
+
+**Delivery, not built yet.** Once the Test Lab passes it, the advice will reach my son each morning while he gets
+ready. That will be either a text to his phone or a voice message broadcast to his room through Alexa or Google Home.
+Voice is the likely choice, because he can't miss it.
+
+**Why not just use Alexa or Google?** A smart speaker can already read the forecast aloud on a schedule. What it
+can't do is turn 11 °C and 18% rain into no jacket and no umbrella for my son. That decision is made by the two
+agents, and the Test Lab checks it before anything reaches his room.
 
 ## Built on
 

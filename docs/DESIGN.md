@@ -83,6 +83,18 @@ Intro: "Try a new setup against the one Today runs. Same agents, same scenarios,
 - Fixed, Still failing and Still passing are collapsed expanders with counts.
 - Cost and speed for current versus candidate.
 
+## Delivery (not built yet)
+
+Handoff chain: weather → Agent 1 → Agent 2 → **His phone or room speaker, later**.
+
+**Delivery, not built yet.** Once the Test Lab passes it, the advice will reach my son each morning while he gets
+ready. That will be either a text to his phone or a voice message broadcast to his room through Alexa or Google Home.
+Voice is the likely choice, because he can't miss it.
+
+**Why not just use Alexa or Google?** A smart speaker can already read the forecast aloud on a schedule. What it
+can't do is turn 11 °C and 18% rain into no jacket and no umbrella for my son. That decision is made by the two
+agents, and the Test Lab checks it before anything reaches his room.
+
 ## Desktop and phone
 
 Every screen must work well on both. Test each one at desktop width (about 1280 px) and phone width (about 390 px).
