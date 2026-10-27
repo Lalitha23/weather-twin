@@ -6,6 +6,7 @@ page only ever shows a friendly message.
 """
 import hmac
 import os
+import re
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -14,7 +15,7 @@ import streamlit as st
 
 from agents.advisor import run_advisor
 from agents.summarizer import make_client, run_summarizer
-from app.report_data import load_active
+from app.report_data import differing_fields, load_active
 from app.ui import esc, json_block, md
 from checks.checks import numbers_match_tool
 from tools.weather_live import load_location
@@ -47,8 +48,53 @@ MSG_SHAPE = "The agent's answer came back in the wrong shape. Try Refresh."
 MSG_SETUP = "Today isn't set up yet. The model setting is missing."
 
 
+DETAIL_MAX = 240
+# Things that look like credentials: bearer tokens, sk-/key-/token- style IDs,
+# and any long unbroken run of key-like characters.
+SECRET_PATTERNS = [
+    re.compile(r"(?i)(bearer\s+)\S+"),
+    re.compile(r"(?i)\b(?:sk|key|token|api)[-_][A-Za-z0-9_\-]{6,}"),
+    re.compile(r"[A-Za-z0-9_\-]{32,}"),
+]
+
+
 class TodayError(Exception):
-    """A failure with a message that is safe to show."""
+    """A failure with a friendly message, plus a short detail for the Details expander."""
+
+    def __init__(self, message: str, detail: str = ""):
+        super().__init__(message)
+        self.detail = detail
+
+
+def safe_detail(text: str) -> str:
+    """One short line: first line only, secrets redacted, no stack trace."""
+    line = (text or "").strip().splitlines()[0] if (text or "").strip() else ""
+    for env in ("NEBIUS_API_KEY", "APP_PASSWORD"):
+        value = os.getenv(env, "")
+        if value:
+            line = line.replace(value, "[redacted]")
+    for pattern in SECRET_PATTERNS:
+        line = pattern.sub(lambda m: (m.group(1) if m.groups() else "") + "[redacted]", line)
+    return line if len(line) <= DETAIL_MAX else line[:DETAIL_MAX - 1] + "…"
+
+
+API_MESSAGE = re.compile(r"""['"]message['"]\s*:\s*(['"])(.*?)(?<!\\)\1""", re.DOTALL)
+STATUS_CODE = re.compile(r"Error code: (\d{3})")
+
+
+def error_detail(stage: str, error: str) -> str:
+    """'api_error: AuthenticationError: Error code: 401 - {...'message': 'x'...}'
+    -> 'Agent 1 · AuthenticationError (401): x'. Other errors pass through."""
+    text = error.removeprefix("api_error: ")
+    head = re.match(r"(\w+): (.*)", text, re.DOTALL)
+    if head:
+        kind, rest = head.groups()
+        message = API_MESSAGE.search(rest)
+        code = STATUS_CODE.search(rest)
+        if message:
+            status = f" ({code.group(1)})" if code else ""
+            text = f"{kind}{status}: {message.group(2)}"
+    return safe_detail(f"{stage} · {text}")
 
 
 def _friendly(error: str) -> str:
@@ -59,21 +105,23 @@ def _friendly(error: str) -> str:
 def run_today(model_alias: str, prompt_version: str) -> dict:
     model = os.getenv(ALIASES.get(model_alias, ""), "") if model_alias in ALIASES else model_alias
     if not model:
-        raise TodayError(MSG_SETUP)
+        raise TodayError(MSG_SETUP, f"Setup · no model ID for {model_alias!r}")
     client = make_client()
     summarizer = run_summarizer(model, client, prompt_version)
     tool = summarizer.get("tool_output")
     if isinstance(tool, dict) and "error" in tool:
-        raise TodayError(MSG_WEATHER)
+        raise TodayError(MSG_WEATHER, error_detail("Weather tool", str(tool["error"])))
     if summarizer["error"]:
-        raise TodayError(_friendly(summarizer["error"]))
+        raise TodayError(_friendly(summarizer["error"]), error_detail("Agent 1", summarizer["error"]))
     advisor = run_advisor(model, summarizer["summary"], client, prompt_version)
     if advisor["error"]:
-        raise TodayError(_friendly(advisor["error"]))
+        raise TodayError(_friendly(advisor["error"]), error_detail("Agent 2", advisor["error"]))
     record = {"summarizer": summarizer, "advisor": advisor}
     return {
         "model": model,
         "prompt_version": prompt_version,
+        "agent1": {"model": summarizer["model"], "prompt_version": summarizer["prompt_version"]},
+        "agent2": {"model": advisor["model"], "prompt_version": advisor["prompt_version"]},
         "tool": tool,
         "summary": summarizer["summary"],
         "advice": advisor["advice"],
@@ -121,31 +169,59 @@ def _fmt(value, unit: str) -> str:
     return "–" if value is None else f"{value:g}{unit}"
 
 
-def _weather_card(r: dict) -> None:
+def _weather_card(r: dict) -> str:
+    """The raw numbers from the tool."""
     tool = r["tool"]
     observed = (tool.get("observed_at") or "")[:16]
     try:
         day = datetime.fromisoformat(observed).strftime("%a %b %-d")
     except ValueError:
         day = "Today"
-    note = ""
-    if r["numbers"]["result"] == "fail":
-        note = '<div class="note-orange">Agent 1 reported different numbers. See Agent 1 summary.</div>'
     temp = "–" if tool.get("temperature_c") is None else f"{round(tool['temperature_c'])}°"
     loc = load_location()
-    md(f"""<div class="card">
+    return f"""<div class="card flow-card">
+  <div class="label">Weather data · get_weather</div>
   <div class="place">{esc(loc['name'])} {esc(loc['zip'])}</div>
   <div class="weather-top"><span>{esc(day)} · {esc(tool.get('time_of_day') or '')}</span>
     <span class="cond">{esc(display_conditions(tool.get('conditions')))}</span></div>
-  <div class="weather-main"><div class="temp">{temp}<span style="font-size:24px;">C</span></div>
+  <div class="weather-main"><div class="temp">{temp}<span style="font-size:22px;">C</span></div>
     <div class="wx-side">Rain {_fmt(tool.get('rain_chance_pct'), '%')}<br>Wind {_fmt(tool.get('wind_kph'), ' km/h')}</div></div>
-  {note}
-</div>""")
+</div>"""
+
+
+def _agent_pills(agent: dict) -> str:
+    return (f'<div class="pills" style="margin:0 0 12px;"><span class="pill">{esc(agent["model"].split("/")[-1])}</span>'
+            f'<span class="pill">prompt {esc(agent["prompt_version"])}</span></div>')
+
+
+def _agent1_card(r: dict) -> str:
+    note = ""
+    if r["numbers"]["result"] == "fail":
+        note = '<div class="note-orange">Agent 1 reported different numbers than the tool.</div>'
+    summary = json_block(r["summary"], differing_fields(r["tool"], r["summary"]))
+    return (f'<div class="card flow-card"><div class="ftitle">Agent 1, Summarizer</div>{_agent_pills(r["agent1"])}'
+            f'{summary}{note}</div>')
+
+
+def _handoff() -> str:
+    return ('<div class="handoff" aria-label="handoff"><div class="arrow"></div>'
+            '<div class="handoff-label">handoff</div>'
+            '<div class="handoff-sub">Agent 2 reads only this summary</div></div>')
 
 
 def _tile(name: str, yes: bool) -> str:
     return (f'<div class="tile {"yes" if yes else ""}"><div class="label">{name}</div>'
             f'<div class="big">{"Yes" if yes else "No"}</div></div>')
+
+
+def _agent2_card(r: dict) -> str:
+    a = r["advice"]
+    confidence = ('<span class="pill conf-yes">Confident</span>' if a["confident"]
+                  else '<span class="pill conf-no">Not confident</span>')
+    return (f'<div class="card flow-card"><div class="ftitle">Agent 2, Advisor</div>{_agent_pills(r["agent2"])}'
+            f'<div class="tiles">{_tile("Jacket", a["jacket"])}{_tile("Umbrella", a["umbrella"])}</div>'
+            f'<div style="margin:0 0 10px;">{confidence}</div>'
+            f'<div class="label">Why</div><div style="font-size:15px;">{esc(a["why"])}</div></div>')
 
 
 def _unlocked() -> None:
@@ -154,27 +230,28 @@ def _unlocked() -> None:
         with st.spinner("Checking today's weather…"):
             r = run_today(active["model"], active["prompt_version"])
     except TodayError as e:
-        md(f'<div class="card err">{esc(e)}</div>')
-        _refresh_button()
+        _error(str(e), e.detail)
         return
-    except Exception:  # never show a stack trace
-        md('<div class="card err">Something went wrong. Try Refresh in a minute.</div>')
-        _refresh_button()
+    except Exception as e:  # never show a stack trace
+        _error("Something went wrong. Try Refresh in a minute.",
+               safe_detail(f"{type(e).__name__}: {e}"))
         return
 
-    a = r["advice"]
-    _weather_card(r)
-    md(f'<div class="tiles">{_tile("Jacket", a["jacket"])}{_tile("Umbrella", a["umbrella"])}</div>')
-    md(f'<div class="card"><div class="label">Why</div><div style="font-size:16px;">{esc(a["why"])}</div></div>')
-    with st.expander("Agent 1 summary"):
-        md(json_block(r["summary"]))
+    md(f'<div class="flow">{_weather_card(r)}{_agent1_card(r)}{_handoff()}{_agent2_card(r)}</div>')
     updated = datetime.fromtimestamp(r["fetched_at"], PACIFIC).strftime("%H:%M")
-    with st.container(key="footer"):
-        md(f'<div class="pills"><span class="pill">{esc(r["model"].split("/")[-1])}</span>'
-           f'<span class="pill">prompt {esc(r["prompt_version"])}</span>'
-           f'<span class="pill">{r["tokens"]:,} tokens · {r["latency_s"]:.1f} s</span></div>'
-           f'<p class="muted" style="margin:12px 0 8px;font-size:14px;">Cached · updated {updated}</p>')
+    with st.container(key="footer_line"):
+        md(f'<p class="muted mono" style="margin:0 0 8px;font-size:13px;">{r["tokens"]:,} tokens · '
+           f'{r["latency_s"]:.1f} s · Cached · updated {updated}</p>')
         _refresh_button()
+
+
+def _error(message: str, detail: str) -> None:
+    """Friendly card, then a collapsed Details line. Only reached after unlock."""
+    md(f'<div class="card err">{esc(message)}</div>')
+    if detail:
+        with st.expander("Details", expanded=False):
+            md(f'<p class="mono" style="margin:0;font-size:13px;word-break:break-word;">{esc(detail)}</p>')
+    _refresh_button()
 
 
 def _refresh_button() -> None:
@@ -184,8 +261,9 @@ def _refresh_button() -> None:
 
 
 def render() -> None:
-    with st.container(key="today"):
-        if st.session_state.get("unlocked"):
+    if st.session_state.get("unlocked"):
+        with st.container(key="today_flow"):
             _unlocked()
-        else:
+    else:
+        with st.container(key="today"):
             _locked()

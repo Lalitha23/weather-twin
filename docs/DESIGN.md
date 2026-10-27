@@ -35,12 +35,12 @@ Locked state (until `APP_PASSWORD` is entered):
 - Under the card: "Test Lab stays open to everyone. It only shows saved results."
 - No model calls happen in this state.
 
-Unlocked state, top to bottom:
-1. **Weather card.** Date and time of day on the left, conditions on the right. Big temperature (about 64 px). Rain chance and wind on the right in mono.
-2. **Two answer tiles side by side.** Jacket and Umbrella, each with a big Yes or No. A "Yes" tile is filled blue with white text. A "No" tile is white.
-3. **Why card.** Label "Why" and the advisor's sentence.
-4. **"Agent 1 summary" expander**, closed by default.
-5. **Footer.** Pills for model, prompt version, and tokens with latency. "Cached · updated HH:MM" and a "Refresh" button.
+Unlocked state. The page shows the two agents and the handoff between them, so a judge can see that Agent 2 reads only Agent 1's summary. Top to bottom on phone, left to right on desktop:
+1. **Weather data card.** Label "Weather data · get_weather". The raw numbers from the tool: place ("Redmond, WA 98052"), date and time of day, big temperature (about 56 px), conditions, rain chance and wind in mono.
+2. **Agent 1 card.** Title "Agent 1, Summarizer". Pills for its model and prompt version. Its summary is always shown as JSON in mono (no expander), with any value that differs from the tool highlighted. If numbers_match_tool fails, a small orange note on this card: "Agent 1 reported different numbers than the tool."
+3. **Handoff arrow** between Agent 1 and Agent 2, labelled "handoff", with the line "Agent 2 reads only this summary". It points right on desktop and down on phone.
+4. **Agent 2 card.** Title "Agent 2, Advisor". Pills for its model and prompt version. Two big answer tiles, Jacket and Umbrella, each Yes or No (a "Yes" tile is filled blue with white text, a "No" tile is white). A confidence pill, "Confident" or "Not confident". The why line.
+5. **Footer line**, small and muted: tokens and latency for the whole run, "Cached · updated HH:MM", and a "Refresh" button.
 
 Errors: a friendly card, for example "Couldn't reach the weather service. Try Refresh in a minute." Never a stack trace.
 
@@ -90,7 +90,7 @@ Every screen must work well on both. Test each one at desktop width (about 1280 
 
 | Screen | Desktop | Phone |
 |---|---|---|
-| Today | Content centred in a column about 480 px wide, so it reads like a card, not stretched across the screen. Answer tiles side by side. | Full width with 16 to 20 px side margins. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
+| Today | Locked card centred in a column about 480 px wide. Unlocked: weather, Agent 1, handoff arrow and Agent 2 side by side in one row, left to right, across the full content width. | Full width with 16 to 20 px side margins. The cards stack in the same order, with the handoff arrow pointing down. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
 | Official report | Decision card text and reason boxes side by side. Results table fully visible. Run trace panels in three columns. Cost table and "No prompt fixed this" card side by side. | Decision card stacks, reasons under the title. Results table scrolls sideways inside its own box. Run trace panels stack in order 1, 2, 3. Cards stack. |
 | Live comparison | Current and candidate boxes in one row. Count tiles in one row of four. | Current and candidate boxes stack. Count tiles in a two by two grid. Tables scroll sideways inside their own box. |
 

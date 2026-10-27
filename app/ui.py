@@ -56,6 +56,36 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .tile .big { font-size:40px; font-weight:700; line-height:1.1; }
 .pills { display:flex; flex-wrap:wrap; gap:8px; }
 .pill { font-family:var(--mono); font-size:13px; border:1px solid var(--line); border-radius:999px; padding:4px 10px; background:var(--ground); color:var(--ink); }
+/* Today flow: weather -> Agent 1 -> handoff -> Agent 2 */
+.flow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 96px minmax(0,1.2fr); gap:12px; align-items:stretch; margin:0 0 12px; }
+.flow-card { margin:0; }
+.flow-card .tiles { margin:0 0 12px; }
+.flow-card .tile { padding:14px 16px; }
+.flow-card .tile .big { font-size:34px; }
+.flow-card .temp { font-size:56px; white-space:nowrap; }
+.flow-card .weather-main { flex-direction:column; align-items:flex-start; gap:8px; }
+.flow-card .wx-side { text-align:left; white-space:nowrap; }
+.ftitle { font-size:18px; font-weight:600; margin:0 0 10px; color:var(--ink); }
+.flow-card .json { background:var(--ground); border-radius:10px; padding:10px 12px; }
+.flow-card .note-orange { margin-top:12px; }
+.handoff { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px; color:var(--blue); }
+.handoff .arrow { width:100%; height:2px; background:var(--blue); position:relative; }
+.handoff .arrow::after { content:""; position:absolute; right:-2px; top:-6px; border-left:12px solid var(--blue);
+  border-top:7px solid transparent; border-bottom:7px solid transparent; }
+.handoff-label { font-family:var(--mono); font-size:14px; font-weight:600; }
+.handoff-sub { font-size:13px; color:var(--muted); line-height:1.3; }
+.st-key-footer_line .stButton button { width:auto; min-width:160px; }
+.pill.conf-yes { background:var(--pass-bg); color:var(--pass-fg); border-color:var(--pass-bg); }
+.pill.conf-no { background:var(--soft-bg); color:var(--soft-fg); border-color:var(--soft-bg); }
+@media (max-width: 900px) {
+  .flow { grid-template-columns:1fr; }
+  .handoff { flex-direction:row; flex-wrap:wrap; gap:4px 10px; padding:2px 0; }
+  .handoff .arrow { width:2px; height:36px; }
+  .handoff .arrow::after { right:-6px; top:auto; bottom:-2px; border-left:7px solid transparent;
+    border-right:7px solid transparent; border-top:12px solid var(--blue); border-bottom:0; }
+  .handoff-sub { flex-basis:100%; }
+  .st-key-footer_line .stButton button { width:100%; }
+}
 .err { background:var(--soft-bg); border:1px solid #F3C9A7; color:var(--soft-fg); }
 
 /* Decision */
