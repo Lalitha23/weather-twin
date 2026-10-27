@@ -89,7 +89,7 @@ Every screen must work well on both. Test each one at desktop width (about 1280 
 
 | Screen | Desktop | Phone |
 |---|---|---|
-| Today | Locked card centred in a column about 480 px wide. Unlocked: weather, Agent 1, handoff arrow and Agent 2 side by side in one row, left to right, across the full content width. | Full width with 16 to 20 px side margins. The cards stack in the same order, with the handoff arrow pointing down. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
+| Today | Weather, Agent 1, handoff arrow and Agent 2 side by side in one row, left to right, across the full content width. | Full width with 16 to 20 px side margins. The cards stack in the same order, with the handoff arrow pointing down. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
 | Official report | Decision card text and reason boxes side by side. Results table fully visible. Run trace panels in three columns. Cost table and "No prompt fixed this" card side by side. | Decision card stacks, reasons under the title. Results table scrolls sideways inside its own box. Run trace panels stack in order 1, 2, 3. Cards stack. |
 | Live comparison | Current and candidate boxes in one row. Count tiles in one row of four. | Current and candidate boxes stack. Count tiles in a two by two grid. Tables scroll sideways inside their own box. |
 

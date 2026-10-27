@@ -1,8 +1,8 @@
 # Deploying to Streamlit Community Cloud
 
 The repo is ready: `requirements.txt` is pinned, `.streamlit/config.toml` sets the theme, and the
-app starts with no secrets at all. Without secrets, Today stays locked and the Official report
-still works, because it only reads committed files in `results/`.
+app starts with no secrets at all. Without secrets, Today shows a friendly "isn't set up yet" card and the
+Official report still works, because it only reads committed files in `results/`.
 
 ## 1. Before you start
 
