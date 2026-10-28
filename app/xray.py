@@ -10,7 +10,7 @@ from html import escape
 
 from app import answer
 from app.report_data import differing_fields
-from app.sky import SKY_CSS, ink, is_dark, sky_html
+from app.sky import CHIP_DARK, CHIP_LIGHT, SKY_CSS, ink, is_dark, rgba, sky_html
 
 SUMMARY_LINES = (("temperature_c", "temperature", " °C"), ("rain_chance_pct", "rain chance", "%"),
                  ("wind_kph", "wind", " km/h"), ("conditions", "conditions", ""),
@@ -172,8 +172,8 @@ TODAY_CSS = """
 /* Frosted chip for small text sitting on the sky (4.5:1 on every mood) */
 .td-chip { display:inline-block; font-size:15px; font-weight:500; border-radius:999px; padding:6px 14px;
   backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
-.sky-light .td-chip { background:rgba(255,255,255,.55); color:#0F1B2A; }
-.sky-dark .td-chip { background:rgba(15,27,42,.45); color:#FFFFFF; }
+.sky-light .td-chip { background:""" + rgba(CHIP_LIGHT) + """; color:#0F1B2A; }
+.sky-dark .td-chip { background:""" + rgba(CHIP_DARK) + """; color:#FFFFFF; }
 
 .td-hero { margin:4px 0 20px; }
 .td-now { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-top:14px; }

@@ -10,3 +10,6 @@ results/*.jsonl
 !results/.gitkeep
 .streamlit/secrets.toml
 results/matrix_scratch_summary.json
+
+# Local Claude Code settings (preview launch config)
+.claude/

@@ -44,14 +44,16 @@ Add `app/sky.py` with a pure function `sky_mood(conditions: str | None, time_of_
 
 | Mood | Conditions text | Background | Ink (big text) | Extras |
 |---|---|---|---|---|
-| clear | clear sky, mainly clear | `linear-gradient(180deg,#3D8FE0,#7BB8F0 55%,#BFE0FA)` | `#FFFFFF` | sun, 96 px `#FFD666` circle with a slow glow, top right; two white clouds |
-| partly_cloudy | partly cloudy | `linear-gradient(180deg,#5B9FE0,#9CC8F0 55%,#D6EAFA)` | `#FFFFFF` | sun half behind a white cloud; three clouds |
+| clear | clear sky, mainly clear | `linear-gradient(180deg,#3D8FE0,#7BB8F0 55%,#BFE0FA)` | `#0F1B2A` | sun, 96 px `#FFD666` circle with a slow glow, top right; two white clouds |
+| partly_cloudy | partly cloudy | `linear-gradient(180deg,#5B9FE0,#9CC8F0 55%,#D6EAFA)` | `#0F1B2A` | sun half behind a white cloud; three clouds |
 | cloudy | overcast, and anything unknown or missing | `linear-gradient(180deg,#A9B9CA,#C9D5E1 50%,#E6ECF2)` | `#0F1B2A` | four drifting clouds, `#F4F7FA` and `#DCE4EC` |
 | fog | fog, freezing fog | `linear-gradient(180deg,#C3CCD4,#DCE2E7 50%,#EEF1F3)` | `#0F1B2A` | three wide translucent white haze bands drifting slowly |
 | rain | light drizzle, drizzle, heavy drizzle, light freezing drizzle, freezing drizzle, light rain, rain, heavy rain, light freezing rain, freezing rain, light showers, showers, heavy showers | `linear-gradient(180deg,#2C3846,#435263 55%,#66788A)` | `#FFFFFF` | dark clouds `#55636F` and `#3E4A56`; about 34 falling rain streaks |
 | snow | light snow, snow, heavy snow, snow grains, light snow showers, snow showers | `linear-gradient(180deg,#9FB1C3,#C7D4E0 55%,#EEF3F7)` | `#0F1B2A` | about 26 drifting snowflakes |
 | storm | thunderstorm, thunderstorm with hail, thunderstorm with heavy hail | `linear-gradient(180deg,#1C232D,#2E3946 55%,#4A5664)` | `#FFFFFF` | rain streaks plus a soft white flash (overlay opacity .25 for 150 ms) at most once every 7 s |
 | night | clear or partly cloudy when `time_of_day` is "night" | `linear-gradient(180deg,#0E1A33,#1E2F52 60%,#33466B)` | `#FFFFFF` | moon `#F4F1E6` and a few small stars |
+
+Contrast is measured, not assumed. The sky stays fixed while the page scrolls, so big text in the mood's ink must reach 3:1 on every gradient stop, and small text on its frosted chip must reach 4.5:1, with no text shadow counted. Clear and partly cloudy use dark ink because white measured 1.38:1 and 1.23:1 on their light lower sky. Dark chips use `rgba(15,27,42,.45)`. `tests/test_sky.py` checks every mood.
 
 A tool error or missing data uses **cloudy**. Unit test every conditions string above, night, None and an unknown string.
 
@@ -61,7 +63,7 @@ For screenshots and the demo video, allow a preview query parameter, `?sky=rain`
 
 - The sky is a full viewport layer behind the whole Today tab: one HTML block with `position: fixed; inset: 0; z-index: 0; pointer-events: none`, and the Streamlit app background made transparent while Today is shown.
 - Clouds are soft rounded shapes drifting 16 to 22 px sideways over 10 to 15 s. Rain streaks are 2×22 px lines falling in 0.7 to 1.2 s. Snowflakes are 7 px dots falling and swaying over 7 to 12 s. Stagger them with negative delays so the sky is already full on load.
-- Readability. Big text uses the mood's ink. Any text under 24 px that sits directly on the sky must reach 4.5:1 contrast. If it doesn't, put it on a frosted chip (`rgba(255,255,255,.55)` on light skies, `rgba(15,27,42,.35)` on dark skies, `backdrop-filter: blur(12px)`). All cards are always frosted white (`rgba(255,255,255,.88)`, blur 14 px) with dark text.
+- Readability. Big text uses the mood's ink. Any text under 24 px that sits directly on the sky must reach 4.5:1 contrast. If it doesn't, put it on a frosted chip (`rgba(255,255,255,.55)` on light skies, `rgba(15,27,42,.45)` on dark skies, `backdrop-filter: blur(12px)`). All cards are always frosted white (`rgba(255,255,255,.88)`, blur 14 px) with dark text.
 
 ### Today layout, top to bottom
 

@@ -22,10 +22,12 @@ CONDITION_MOODS = {
     **{c: "storm" for c in ("thunderstorm", "thunderstorm with hail", "thunderstorm with heavy hail")},
 }
 
-# Background gradient and ink (big text colour) per mood.
+# Background gradient and ink (big text colour) per mood. The sky is fixed while the page
+# scrolls, so ink must pass on every stop: 3:1 for big text (tests/test_sky.py measures it).
+# Clear and partly cloudy use dark ink because white fails on their light lower sky.
 SKIES = {
-    "clear": ("linear-gradient(180deg,#3D8FE0,#7BB8F0 55%,#BFE0FA)", "#FFFFFF"),
-    "partly_cloudy": ("linear-gradient(180deg,#5B9FE0,#9CC8F0 55%,#D6EAFA)", "#FFFFFF"),
+    "clear": ("linear-gradient(180deg,#3D8FE0,#7BB8F0 55%,#BFE0FA)", "#0F1B2A"),
+    "partly_cloudy": ("linear-gradient(180deg,#5B9FE0,#9CC8F0 55%,#D6EAFA)", "#0F1B2A"),
     "cloudy": ("linear-gradient(180deg,#A9B9CA,#C9D5E1 50%,#E6ECF2)", "#0F1B2A"),
     "fog": ("linear-gradient(180deg,#C3CCD4,#DCE2E7 50%,#EEF1F3)", "#0F1B2A"),
     "rain": ("linear-gradient(180deg,#2C3846,#435263 55%,#66788A)", "#FFFFFF"),
@@ -46,6 +48,19 @@ def sky_mood(conditions: str | None, time_of_day: str | None) -> str:
 def preview_mood(value: str | None) -> str | None:
     """The ?sky= preview value if it names a mood, else None (ignored)."""
     return value if value in MOODS else None
+
+
+# Frosted chips behind small text on the sky (RGB, alpha). Must reach 4.5:1 on every stop.
+CHIP_LIGHT = ((255, 255, 255), 0.55)
+CHIP_DARK = ((15, 27, 42), 0.45)
+
+
+def chip(mood: str) -> tuple[tuple[int, int, int], float]:
+    return CHIP_DARK if is_dark(mood) else CHIP_LIGHT
+
+
+def rgba(c: tuple[tuple[int, int, int], float]) -> str:
+    return f"rgba({c[0][0]},{c[0][1]},{c[0][2]},{c[1]})"
 
 
 def ink(mood: str) -> str:
