@@ -122,8 +122,8 @@ def _agent1_box(r: dict) -> str:
 
 def _agent2_box(r: dict) -> str:
     a = r["advice"]
-    jacket = "jacket" if a["jacket"] else "no jacket"
-    umbrella = "umbrella" if a["umbrella"] else "no umbrella"
+    jacket = "take jacket" if a["jacket"] else "no jacket"
+    umbrella = "take umbrella" if a["umbrella"] else "no umbrella"
     return f"""<div class="xr-box">
   <div class="xr-kicker">Agent 2 decided</div>
   <div class="xr-main">{jacket} · {umbrella}</div>

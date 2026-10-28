@@ -66,6 +66,15 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .jump-label { font-family:var(--mono); font-size:13px; letter-spacing:.06em; color:var(--muted); margin:0 0 6px; text-transform:uppercase; }
 .st-key-jumps .stButton button { background:var(--surface); border:1px solid var(--line); border-radius:999px; font-weight:600; }
 .st-key-jumps .stButton button:hover { border-color:var(--blue); color:var(--blue); }
+@media (max-width: 1023px) {
+  .hero h1 { font-size:32px; margin:8px 0 10px; }
+  .hero .lead { font-size:15px; }
+  .st-key-jumps [data-testid="stHorizontalBlock"] { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+  .st-key-jumps [data-testid="stColumn"] { width:auto !important; min-width:0; flex:none; }
+  .st-key-jumps .stButton button { min-height:40px; padding:4px 12px; font-size:13px; line-height:1.2; }
+  .st-key-jumps .stButton button .stMarkdownEllipsis, .st-key-jumps .stButton button p {
+    white-space:normal; overflow:visible; text-overflow:clip; font-size:13px; line-height:1.2; }
+}
 .st-key-picker { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:10px 16px 2px; box-shadow:var(--shadow); margin-top:4px; }
 
 /* The Inspector iframe holds only the pipeline, the replay controls and the step panel.

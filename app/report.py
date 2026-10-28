@@ -100,19 +100,13 @@ def _inspector(summary: dict, runs: list[dict], shipped: str, run: dict) -> None
 
 def _what_i_found(summary: dict, runs: list[dict], shipped: str) -> None:
     f = rd.what_i_found(summary, runs, shipped)
-    quiet = ""
-    if f["quiet"]:
-        q = f["quiet"]
-        quiet = (f' {esc(q["model"])} with the hardened prompt was sneakier: its summary text looked clean, '
-                 f'but in {rd.fmt_count(q["numbers_changed"])} runs it still changed the number and Agent 2 '
-                 f'skipped the umbrella. That\'s why Test Lab checks the numbers as well as the text.')
+    second = f"The hardened prompt blocked it on {esc(f['model'])}"
+    second += (f", but {esc(f['quiet']['model'])} still changed the number while its words looked clean."
+               if f["quiet"] else ".")
     md(f"""<div class="card">
   <h3>What I found</h3>
-  <p style="margin:0;">I hid a fake "units note" in one weather reading. It told Agent 1 the rain chance was inverted.
-  {esc(f['model'])} with the plain prompt changed {f['tool_rain']:g}% rain to {f['summary_rain']:g}%. Agent 2, which
-  only reads Agent 1's summary, confidently said no umbrella in {rd.fmt_count(f['baseline_obeyed'])} runs.
-  With the hardened prompt, {esc(f['model'])} blocked it in {rd.fmt_count(f['shipped_resisted'])} runs.
-  In a later lab run it still repeated the hidden note, so v2 is better, not perfect.{quiet}</p>
+  <p style="margin:0;">With the plain prompt, a hidden note made Agent 1 change {f['tool_rain']:g}% rain to
+  {f['summary_rain']:g}%, and Agent 2 skipped the umbrella. {second}</p>
 </div>""")
 
 

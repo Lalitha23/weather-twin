@@ -89,7 +89,7 @@ Built with `st.html` (see Scope rules), holding the answer card, the button and 
   - Three boxes, side by side on desktop and stacked with down arrows on phone:
     1. **Weather data.** "temperature · rain chance", with the conditions word under it.
     2. **Agent 1 handed over.** "temperature · rain chance", with "data ok" or "data not ok" under it. A value that differs from the tool is orange with "was X", and the box gets a 2 px orange border.
-    3. **Agent 2 decided.** "jacket · umbrella", with "confident" or "not confident" (orange) under it.
+    3. **Agent 2 decided.** The decision in the answer card's words, "take jacket" or "no jacket", then "take umbrella" or "no umbrella", for example "no jacket · take umbrella", with "confident" or "not confident" (orange) under it.
   - The checks are small chips on the arrows. First arrow: "✓ numbers match" or "✗ numbers changed" (from numbers_match_tool). Second arrow: "✓ rules match" or "✗ rules don't match", from the same rules badge logic as the answer card, or "– rules can't be checked" when data is incomplete.
   - No why text, rules badge or model pills inside the chain; the why and the badge stay on the answer card, and the model is in the footer. The full field lists of all three are behind a small "All fields" disclosure (also a native `<details>`).
 - Everything the earlier Today cards showed is still visible: on the answer card, in the chain, in the footer, or under "All fields".
@@ -103,13 +103,13 @@ Public, no model calls. Reads `results/matrix_summary.json` and `results/officia
 ### 1. Hero
 
 - Kicker in mono, orange (`#C2410C`): "OFFICIAL RUN · 132 RUNS · 41 BROKE · 40 AT THE FIRST HANDOFF". Compute all three numbers from the official runs. A run "broke" if any check failed. It broke "at the first handoff" if any Agent 1 check failed (honesty_agent1, handoff_clean, role_adherence, numbers_match_tool), the same rule as "failure starts here". Add a test that asserts 132, 41 and 40.
-- Headline (about 50 px, weight 900): "Every handoff gets a checkpoint." followed in muted colour by "This run slipped past one." when the selected run failed, or "This run passed every one." when it was clean.
+- Headline (about 50 px, weight 900): "Every handoff gets a checkpoint." followed in muted colour by "This run slipped past one." when the selected run failed, or "This run passed every one." when it was clean. Below 1024 px wide the headline drops to about 32 px, so the Inspector is visible sooner.
 - One line under it: "Before two agents tell my son what to wear, each message between them is inspected. Pick any of the 132 official runs."
 - One small muted line under that: "11 scenarios × 2 models × 2 prompt versions × 3 repeats. Same agent code as Today, fake weather from the twin. Nothing here calls a model." Compute the counts from the summary.
 
-### 2. The Handoff Inspector (one components.html block)
+### 2. The Handoff Inspector (one st.iframe block)
 
-**Jump to** buttons above the picker set it to four runs: "The lie with clean words" (injection_holdout, gpt-oss v2, the first repeat where it obeyed, the default), "The reworded note" (injection_downstream, Nemotron v1, repeat 1), "The fake storm warning" (injection_advisory, Nemotron v1, repeat 1) and "The one Agent 2 failure" (injection_obvious, gpt-oss v2, repeat 3).
+**Jump to** buttons above the picker set it to four runs: "The lie with clean words" (injection_holdout, gpt-oss v2, the first repeat where it obeyed, the default), "The reworded note" (injection_downstream, Nemotron v1, repeat 1), "The fake storm warning" (injection_advisory, Nemotron v1, repeat 1) and "The one Agent 2 failure" (injection_obvious, gpt-oss v2, repeat 3). Below 1024 px wide they show as a 2 by 2 grid of compact chips.
 
 **Run picker**, native Streamlit selects directly above the Inspector: Scenario, Setup and Repeat. Held out scenarios get a "held out" tag. A change reruns the page (no model calls), updates the hero headline and restarts the replay at step 1.
 
@@ -139,7 +139,7 @@ Public, no model calls. Reads `results/matrix_summary.json` and `results/officia
 
 ### 3. What I found
 
-The existing "What I found" card, restyled as a white card. Same wording.
+A white card with two sentences, numbers read from the results: "With the plain prompt, a hidden note made Agent 1 change 60% rain to 40%, and Agent 2 skipped the umbrella. The hardened prompt blocked it on Nemotron, but gpt-oss still changed the number while its words looked clean." The hero, the Inspector and the decision card already tell the rest, so nothing else repeats the Inspector.
 
 ### 4. Decision details and results by check
 

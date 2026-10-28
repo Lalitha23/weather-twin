@@ -98,6 +98,7 @@ def test_chain_marks_a_changed_number_and_a_rule_mismatch():
     chain = chain_html(r, "Cloudy")
     assert 'class="xr-box changed"' in chain and "was 18%" in chain
     assert "✗ numbers changed" in chain and "✗ rules don&#x27;t match" in chain and "not confident" in chain
+    assert "no jacket · take umbrella" in chain  # the same wording as the answer card
 
 
 def test_chain_when_rules_cant_be_checked():
