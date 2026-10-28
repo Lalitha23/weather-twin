@@ -155,12 +155,6 @@ TODAY_CSS = """
 .stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky),
 .stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) [data-testid="stAppViewContainer"] { background:transparent; }
 .stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) [data-testid="stMain"] { position:relative; z-index:1; }
-.stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) .st-key-wt_header {
-  background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-radius:20px; padding:16px 20px; }
-.stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) .stTabs [role="tablist"] {
-  background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-radius:999px; padding:0 14px; width:fit-content; }
 .stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) .st-key-footer_line {
   background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-radius:20px; padding:16px 20px; max-width:760px; margin:0 auto; }

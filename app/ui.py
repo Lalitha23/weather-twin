@@ -1,4 +1,4 @@
-"""Shared CSS and small HTML helpers, following docs/DESIGN.md."""
+"""Shared CSS and small HTML helpers, following docs/REDESIGN.md (sky wash tokens, Geist)."""
 import html
 import json
 from typing import Any
@@ -7,16 +7,30 @@ import streamlit as st
 
 CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap');
 :root {
-  --ground:#F4F5F7; --surface:#FFFFFF; --ink:#15181D; --muted:#5B6470; --line:#E1E4E9;
-  --blue:#1D5FBF; --pass-bg:#E3ECFA; --pass-fg:#16498F; --part-bg:#FFF3DC; --part-fg:#6B4400;
-  --hard:#B5530E; --soft-bg:#FCEBDD; --soft-fg:#7A3507;
-  --mono:'IBM Plex Mono', ui-monospace, monospace; --sans:'IBM Plex Sans', system-ui, sans-serif;
+  --ground:#F6F9FC; --surface:#FFFFFF; --ink:#0F1B2A; --muted:#5B6B7D; --line:#D3E2F0; --inner:#E3EBF3;
+  --blue:#0B5CAD; --pass-bg:#EEF5FC; --pass-bd:#BFD6EE; --pass-fg:#0B5CAD; --part-bg:#FFF7E6; --part-fg:#7A4B00;
+  --hard:#C2410C; --orange:#EA580C; --soft-bg:#FFF4EC; --soft-bd:#FDBA8C; --soft-fg:#C2410C;
+  --shadow:0 8px 24px rgba(11,92,173,.08);
+  --mono:'Geist Mono', ui-monospace, monospace; --sans:'Geist', system-ui, sans-serif;
   --pad:24px;
 }
 html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, label { font-family: var(--sans); }
-[data-testid="stAppViewContainer"] { background: var(--ground); }
+/* Streamlit sets Source Sans directly on these, so name them; .mono keeps Geist Mono. */
+.stApp, .stApp p, .stApp h1, .stApp h2, .stApp h3, .stApp li, .stApp button, .stApp input, .stApp label,
+.stApp textarea, .stApp [data-baseweb="select"], .stApp [data-testid="stMarkdownContainer"] { font-family: var(--sans); }
+.stApp .mono, .stApp code { font-family: var(--mono); }
+/* Sky wash behind Test Lab, with two soft clouds drifting. Today paints its own live sky over this. */
+[data-testid="stAppViewContainer"] { background: linear-gradient(180deg, #CFE5FA 0%, #E7F2FC 45%, #F7FBFE 100%); }
+[data-testid="stAppViewContainer"]::before, [data-testid="stAppViewContainer"]::after {
+  content:""; position:fixed; z-index:0; pointer-events:none; border-radius:80px; animation:wash-drift 16s ease-in-out infinite alternate; }
+[data-testid="stAppViewContainer"]::before { width:420px; height:120px; top:70px; left:6%; background:rgba(255,255,255,.7); }
+[data-testid="stAppViewContainer"]::after { width:340px; height:100px; top:150px; right:8%; background:rgba(255,255,255,.55); }
+@keyframes wash-drift { to { transform:translateX(30px); } }
+[data-testid="stMain"] { position:relative; z-index:1; }
+.stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) [data-testid="stAppViewContainer"]::before,
+.stApp:has([data-testid="stTabPanel"][aria-labelledby] .wt-sky) [data-testid="stAppViewContainer"]::after { display:none; }
 [data-testid="stMainBlockContainer"], .block-container { max-width: 1200px; padding-top: 1.5rem; }
 [data-testid="stHeader"] { background: transparent; }
 * { min-width: 0; }
@@ -35,10 +49,43 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .stTabs [data-baseweb="tab-highlight"] { background: var(--blue); }
 
 /* Cards */
-.card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:var(--pad); margin:0 0 16px; color:var(--ink); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:var(--pad); margin:0 0 16px; color:var(--ink); box-shadow:var(--shadow); }
 .card h3 { margin:0 0 6px; font-size:18px; font-weight:600; }
 .label { font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-[class*="st-key-lockcard"], .st-key-footer, .st-key-setup, [class*="st-key-result_"] { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:var(--pad); }
+[class*="st-key-lockcard"], .st-key-footer, .st-key-setup, [class*="st-key-result_"] { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:var(--pad); box-shadow:var(--shadow); }
+.st-key-wt_header { background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-radius:20px; padding:16px 20px; }
+.stTabs [role="tablist"] { background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-radius:999px; padding:0 14px; width:fit-content; }
+
+/* Official report hero */
+.hero { margin:8px 0 18px; }
+.hero .kicker { font-family:var(--mono); font-size:13px; letter-spacing:.06em; color:var(--hard); font-weight:600; }
+.hero h1 { font-size:50px; font-weight:900; line-height:1.05; letter-spacing:-.03em; margin:10px 0 12px; color:var(--ink); padding:0; }
+.hero h1 .tail { color:var(--muted); }
+.hero .lead { font-size:17px; margin:0 0 6px; color:var(--ink); }
+.hero .small { font-size:13px; color:var(--muted); margin:0; }
+.jump-label { font-family:var(--mono); font-size:13px; letter-spacing:.06em; color:var(--muted); margin:0 0 6px; text-transform:uppercase; }
+.st-key-jumps .stButton button { background:var(--surface); border:1px solid var(--line); border-radius:999px; font-weight:600; }
+.st-key-jumps .stButton button:hover { border-color:var(--blue); color:var(--blue); }
+.st-key-picker { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:10px 16px 2px; box-shadow:var(--shadow); margin-top:4px; }
+
+/* The Inspector iframe holds only the pipeline, the replay controls and the step panel. Its height
+   follows the iframe's own width (a container query), so it switches at the same 600 px point as the
+   layout inside it. Measured content: about 713 px wide, 881 to 951 px narrow, 1031 px at 328 px. */
+.st-key-inspector { container-type:inline-size; }
+.st-key-inspector iframe { height:740px !important; }
+@container (max-width: 599px) { .st-key-inspector iframe { height:975px !important; } }
+@container (max-width: 345px) { .st-key-inspector iframe { height:1050px !important; } }
+
+/* Inspector side panel, native beside the iframe */
+.shipped { background:var(--ink); color:#fff; border-radius:20px; padding:20px; margin:0 0 12px; }
+.shipped .kicker { font-family:var(--mono); font-size:13px; letter-spacing:.08em; color:#AEB6C2; }
+.shipped .sname { font-size:20px; font-weight:800; margin:6px 0; }
+.shipped p { margin:0; color:#C9D2DD; font-size:14px; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.stat { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:16px; box-shadow:var(--shadow); color:var(--ink); }
+.stat .kicker { font-family:var(--mono); font-size:13px; color:var(--muted); }
+.stat b { display:block; font-size:30px; font-weight:800; margin:4px 0 2px; font-family:var(--mono); letter-spacing:-.02em; }
+.stat span { font-size:13px; color:var(--muted); }
 .st-key-footer_line .stButton button { width:auto; min-width:160px; }
 @media (max-width: 900px) {
   .st-key-footer_line .stButton button { width:100%; }
@@ -52,7 +99,7 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .decision h2 { font-size:28px; margin:0 0 8px; color:#fff; font-weight:700; line-height:1.2; }
 .decision .cost { color:#C9CFD8; font-size:15px; }
 .reasons { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
-.reason { background:#22272F; border:1px solid #333A45; border-radius:14px; padding:14px; }
+.reason { background:#1B2A3B; border:1px solid #2B3B4E; border-radius:14px; padding:14px; }
 .reason b { display:block; font-size:16px; margin-bottom:4px; }
 .reason span { color:#AEB6C2; font-size:13px; }
 .btn-disabled { margin-top:16px; display:inline-block; min-height:44px; line-height:44px; padding:0 16px; border-radius:10px;
@@ -81,6 +128,9 @@ table.results td.name div { font-family:var(--sans); color:var(--muted); font-si
 .callout { background:var(--surface); border-left:4px solid var(--hard); border-radius:10px; padding:12px 16px; margin:8px 0 16px; font-size:15px; }
 .panel { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; height:100%; }
 .panel.start { border:2px solid var(--hard); }
+.chain-end { margin:10px 0 0; padding:10px 14px; border:1px dashed var(--line); border-radius:14px; background:var(--surface);
+  font-size:14px; font-weight:600; color:var(--ink); }
+.chain-end .arrow { color:var(--blue); margin-right:4px; }
 .panel .ph { margin:0 0 8px; font-size:15px; font-weight:600; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; }
 .panel .ph em { font-style:normal; font-size:13px; color:var(--hard); font-weight:600; }
 .json { font-family:var(--mono); font-size:13px; word-break:break-word; line-height:1.55; color:var(--ink); }

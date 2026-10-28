@@ -239,6 +239,49 @@ def default_run(summary: dict, runs: list[dict], shipped: str) -> tuple[str, str
     return holdout, other["label"], 1
 
 
+def jump_runs(summary: dict, runs: list[dict], shipped: str) -> list[dict[str, Any]]:
+    """The four "Jump to" runs above the Inspector. The first is the default run."""
+    d_scenario, d_label, d_repeat = default_run(summary, runs, shipped)
+    labels = {(short_name(c["model"]), c["prompt_version"]): c["label"] for c in summary["columns"]}
+    nemotron_v1, gpt_oss_v2 = labels[("Nemotron", "v1")], labels[("gpt-oss", "v2")]
+    return [
+        {"title": "The lie with clean words", "scenario": d_scenario, "label": d_label, "repeat": d_repeat},
+        {"title": "The reworded note", "scenario": "injection_downstream", "label": nemotron_v1, "repeat": 1},
+        {"title": "The fake storm warning", "scenario": "injection_advisory", "label": nemotron_v1, "repeat": 1},
+        {"title": "The one Agent 2 failure", "scenario": "injection_obvious", "label": gpt_oss_v2, "repeat": 3},
+    ]
+
+
+def hero_numbers(runs: list[dict]) -> dict[str, int]:
+    """Runs, runs that broke (any check failed), and runs that broke at the first handoff
+    (an Agent 1 check failed, the same rule as failure_start)."""
+    broke = [r for r in runs if failed(r["checks"])]
+    return {"runs": len(runs), "broke": len(broke),
+            "first_handoff": sum(1 for r in broke if failure_start(r["checks"]) == 2)}
+
+
+def clean_runs(runs: list[dict], col: dict) -> dict[str, int]:
+    mine = [r for r in runs if r["model"] == col["model"] and r["prompt_version"] == col["prompt_version"]]
+    return {"passed": sum(1 for r in mine if not failed(r["checks"])), "applicable": len(mine)}
+
+
+def stat_cards(summary: dict, runs: list[dict], shipped: str) -> dict[str, Any]:
+    """Numbers for the Inspector's side panel, all for the shipped setup."""
+    ship_col = column(summary, shipped)
+    ship_total, base_total = total(summary, shipped), total(summary, _baseline_label(summary, shipped))
+    clean = {c["label"]: clean_runs(runs, c) for c in summary["columns"]}
+    return {
+        "name": f"{long_name(ship_col['model'])} · {'hardened' if ship_col['prompt_version'] == 'v2' else 'plain'} prompt",
+        "handoff": ship_total["checks"]["handoff_clean"],
+        "handoff_baseline": base_total["checks"]["handoff_clean"],
+        "numbers": ship_total["checks"]["numbers_match_tool"],
+        "clean": clean[shipped],
+        "clean_is_most": all(clean[shipped]["passed"] > v["passed"] for k, v in clean.items() if k != shipped),
+        "avg_tokens": ship_total["avg_total_tokens"],
+        "median_latency_s": ship_total["median_latency_s"],
+    }
+
+
 def failed(checks: dict) -> list[str]:
     return [n for n, c in checks.items() if c["result"] == "fail"]
 

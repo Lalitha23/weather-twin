@@ -9,7 +9,8 @@ This file is the build target for the redesign. It replaces the "Visual tokens",
 - All existing tests must still pass.
 - Animated, clickable parts are built as self contained HTML blocks, because Streamlit reruns the page on every widget click, so smooth animations cannot live in native widgets.
   - **Today uses `st.html`, with no iframe and no JavaScript.** The sky is plain HTML and CSS. The X-ray toggle is a native `<details>`/`<summary>`, so it has a real label, keyboard focus with a visible focus ring, Space and Enter to toggle, and its open or closed state announced. Two copies render, open on desktop and folded on phone, and CSS shows one. An iframe could not paint the full screen sky, and `components.html` iframes have a fixed height that can't follow the X-ray folding.
-  - **The Inspector (Test Lab) uses `streamlit.components.v1.html`**, with its data passed in as JSON from Python. It needs JavaScript for the replay, and its height is fixed, so the iframe's fixed height fits.
+  - **The Inspector (Test Lab) uses `st.iframe`** with an HTML string, with its data passed in as JSON from Python and inserted with `textContent`. It needs JavaScript for the replay, and its height is fixed. (`streamlit.components.v1.html` does the same, but Streamlit 1.66 deprecates it for removal, and `requirements.txt` allows newer 1.x releases.)
+  - The iframe holds only the pipeline, the replay controls and the step panel. The run picker, the "Jump to" buttons and the side panel are native Streamlit around it. Its height is set in CSS with a container query on its own width, so the outer height switches at the same 600 px point as the layout inside it: 740 px wide layout, 975 px narrow, 1050 px under 346 px.
 - External resources: Google Fonts only. No other scripts or CDNs.
 - Every animation stops under `@media (prefers-reduced-motion: reduce)`, and autoplay is off then too.
 
@@ -107,14 +108,16 @@ Public, no model calls. Reads `results/matrix_summary.json` and `results/officia
 
 ### 2. The Handoff Inspector (one components.html block)
 
-**Run picker** at the top of the block: Scenario, Setup and Repeat selects. Held out scenarios get a "held out" tag. Default is injection_holdout · gpt-oss v2 · the first repeat where it obeyed. Changing the run restarts the replay at step 1.
+**Jump to** buttons above the picker set it to four runs: "The lie with clean words" (injection_holdout, gpt-oss v2, the first repeat where it obeyed, the default), "The reworded note" (injection_downstream, Nemotron v1, repeat 1), "The fake storm warning" (injection_advisory, Nemotron v1, repeat 1) and "The one Agent 2 failure" (injection_obvious, gpt-oss v2, repeat 3).
+
+**Run picker**, native Streamlit selects directly above the Inspector: Scenario, Setup and Repeat. Held out scenarios get a "held out" tag. A change reruns the page (no model calls), updates the hero headline and restarts the replay at step 1.
 
 **Pipeline**, a white card, four nodes left to right with animated connectors:
 - TOOL, "get_weather (twin)", value "rain 60%" (or "timeout").
 - AGENT 1, "Summarizer", value "rain 40%", in orange when it differs from the tool.
 - AGENT 2, "Advisor", value "umbrella: no" or "umbrella: yes".
 - LATER, "His phone or room speaker", value "safe to send" (blue) or "should not send" (orange).
-- Each node is 172 px wide with radius 14. The active node gets a 2 px blue border and a soft blue ring. The node where the failure starts gets a 2 px orange border.
+- Each node is up to 172 px wide with radius 14, and shrinks to fit the Inspector column beside the side panel. Gate chips sit in a strip above the nodes, centred over each connector. The active node gets a 2 px blue border and a soft blue ring. The node where the failure starts gets a 2 px orange border.
 - Gate chips above the connectors. Between Tool and Agent 1: "text ✓/✗  numbers ✓/✗" from handoff_clean and numbers_match_tool (show "–" for n/a). Between Agent 1 and Agent 2: "decision ✓/✗" from umbrella_rule, jacket_rule and injection_not_followed. Between Agent 2 and the last node: "delivery", neutral. Pass chips use the pass colours and failed chips use the fail colours. A failed chip pulses softly.
 - A 10 px dot travels along each connector every 1.6 s. It is blue until the node where the failure starts, and orange after it.
 
@@ -127,7 +130,7 @@ Public, no model calls. Reads `results/matrix_summary.json` and `results/officia
 - Step 4, "Verdict". "Failure started at Agent 1. Agent 2 only passed it on.", or "Agent 1 was fine. Failure started at Agent 2.", or "Clean run. Every handoff passed." When handoff_clean passed but numbers_match_tool failed, add "A text check alone would have called this run safe." Under the verdict, show the plain words run callout from `report_data.callout`, for example "Agent 1 changed the rain chance from 60% to 40%, and Agent 2 did what the hidden note wanted: no umbrella."
 - Each check box shows the check name in mono, Pass or Fail, and a plain words detail.
 
-**Side panel** (right, about 40%):
+**Side panel** (right, about 35%), native Streamlit beside the iframe:
 - A dark ink card, "SHIPPED TO TODAY", "Nemotron 3 Ultra · hardened prompt", "Better, not perfect. A later run still repeated the note."
 - Four white stat cards for the shipped setup, all computed: clean handoffs (12/12, "up from 3/12 with the plain prompt"), numbers kept (30/30), clean runs (27/33, "most of any setup"), cost (average tokens per run and median latency).
 

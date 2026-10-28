@@ -1,6 +1,6 @@
-"""Look inside one run: callout, three panels and the check grid.
+"""Look inside one run: callout, three panels, the last step and the check grid.
 
-Shared by the Official report and the Live comparison.
+Used by the Live comparison. The Official report uses the Handoff Inspector instead.
 """
 import streamlit as st
 
@@ -34,6 +34,8 @@ def render_run(run: dict) -> None:
         body = json_block(advice, rd.wrong_advice_fields(checks)) if advice is not None else \
             f'<p class="muted">No advice ({esc(run["advisor"]["error"])})</p>'
         md(_panel(3, "Agent 2 advice", body, start))
+    md('<div class="chain-end"><span class="arrow">→</span> 4 · His phone or room speaker, later '
+       '<span class="muted">· not built yet, nothing is sent</span></div>')
 
     boxes = []
     for name, c in rd.checks_sorted(checks):

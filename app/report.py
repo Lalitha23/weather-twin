@@ -6,8 +6,10 @@ through app.report_data.
 import streamlit as st
 
 from app import report_data as rd
-from app.drilldown import render_run
+from app.inspector import inspector_data, inspector_html, scenario_expected
 from app.ui import esc, md
+
+PICK = ("insp_scenario", "insp_label", "insp_repeat")
 
 
 @st.cache_data(show_spinner=False)
@@ -15,13 +17,85 @@ def _load() -> tuple[dict, list[dict]]:
     return rd.load_summary(), rd.load_runs()
 
 
-def _intro(summary: dict, runs: list[dict]) -> None:
+def _intro_line(summary: dict) -> str:
     models = {c["model"] for c in summary["columns"]}
     prompts = {c["prompt_version"] for c in summary["columns"]}
-    md(f'<p class="muted" style="margin:4px 0 16px;">Official run, Oct 25. {len(runs)} runs: '
-       f'{len(rd.scenarios(summary))} scenarios × {len(models)} models × {len(prompts)} prompt versions × '
-       f'{summary["repeats"]} repeats. Same agent code as Today, fake weather from the twin. '
-       f'Nothing here calls a model.</p>')
+    return (f'{len(rd.scenarios(summary))} scenarios × {len(models)} models × {len(prompts)} prompt versions × '
+            f'{summary["repeats"]} repeats. Same agent code as Today, fake weather from the twin. '
+            f'Nothing here calls a model.')
+
+
+def _hero(summary: dict, runs: list[dict], run: dict) -> None:
+    n = rd.hero_numbers(runs)
+    tail = "This run slipped past one." if rd.failed(run["checks"]) else "This run passed every one."
+    md(f"""<div class="hero">
+  <div class="kicker">OFFICIAL RUN · {n['runs']} RUNS · {n['broke']} BROKE · {n['first_handoff']} AT THE FIRST HANDOFF</div>
+  <h1>Every handoff gets a checkpoint. <span class="tail">{tail}</span></h1>
+  <p class="lead">Before two agents tell my son what to wear, each message between them is inspected.
+  Pick any of the {n['runs']} official runs.</p>
+  <p class="small">{esc(_intro_line(summary))}</p>
+</div>""")
+
+
+def _pick(summary: dict, runs: list[dict], shipped: str) -> dict:
+    """Jump buttons and the run picker. Native widgets: a change reruns the page, no model calls."""
+    jumps = rd.jump_runs(summary, runs, shipped)
+    if PICK[0] not in st.session_state:
+        first = jumps[0]
+        st.session_state.update(dict(zip(PICK, (first["scenario"], first["label"], first["repeat"]))))
+
+    def jump(j: dict) -> None:
+        st.session_state.update(dict(zip(PICK, (j["scenario"], j["label"], j["repeat"]))))
+
+    with st.container(key="jumps"):
+        md('<div class="jump-label">Jump to</div>')
+        cols = st.columns(len(jumps))
+        for col, j in zip(cols, jumps):
+            col.button(j["title"], key=f"jump_{j['scenario']}_{j['label']}_{j['repeat']}",
+                       on_click=jump, args=(j,), use_container_width=True)
+    names = rd.scenarios(summary)
+    labels = [c["label"] for c in summary["columns"]]
+    with st.container(key="picker"):
+        s1, s2, s3 = st.columns(3)
+        scenario = s1.selectbox("Scenario", names, key=PICK[0],
+                                format_func=lambda s: f"{s}  · held out" if rd.is_held_out(s) else s)
+        label = s2.selectbox("Setup", labels, key=PICK[1], format_func=lambda l: rd.column_title(rd.column(summary, l)))
+        repeat = s3.selectbox("Repeat", list(range(1, summary["repeats"] + 1)), key=PICK[2])
+    col = rd.column(summary, label)
+    return rd.find_run(runs, scenario, col["model"], col["prompt_version"], repeat)
+
+
+def _side_panel(summary: dict, runs: list[dict], shipped: str) -> None:
+    c = rd.stat_cards(summary, runs, shipped)
+    most = "most of any setup" if c["clean_is_most"] else "every check passed"
+    md(f"""<div class="shipped">
+  <div class="kicker">SHIPPED TO TODAY</div>
+  <div class="sname">{esc(c['name'])}</div>
+  <p>Better, not perfect. A later run still repeated the note.</p>
+</div>
+<div class="stats">
+  <div class="stat"><div class="kicker">Clean handoffs</div><b>{c['handoff']['passed']}/{c['handoff']['applicable']}</b>
+    <span>up from {c['handoff_baseline']['passed']}/{c['handoff_baseline']['applicable']} with the plain prompt</span></div>
+  <div class="stat"><div class="kicker">Numbers kept</div><b>{c['numbers']['passed']}/{c['numbers']['applicable']}</b>
+    <span>Agent 1 passed the tool's numbers through</span></div>
+  <div class="stat"><div class="kicker">Clean runs</div><b>{c['clean']['passed']}/{c['clean']['applicable']}</b>
+    <span>{most}</span></div>
+  <div class="stat"><div class="kicker">Cost</div><b>{c['avg_tokens']:,.0f}</b>
+    <span>tokens per run on average, median {c['median_latency_s']:.1f} s</span></div>
+</div>""")
+
+
+def _inspector(summary: dict, runs: list[dict], shipped: str, run: dict) -> None:
+    left, right = st.columns([13, 7], gap="medium")
+    with left, st.container(key="inspector"):
+        if run is None:
+            md('<div class="card err">That run is not in the official results.</div>')
+        else:
+            # st.iframe replaces the deprecated components.html. Our own page, with run text passed
+            # as JSON and shown with textContent. Height is set per breakpoint in CSS (.st-key-inspector).
+            st.iframe(inspector_html(inspector_data(run, scenario_expected(run["scenario"]))), height=740)
+    with right:
+        _side_panel(summary, runs, shipped)
 
 
 def _what_i_found(summary: dict, runs: list[dict], shipped: str) -> None:
@@ -102,27 +176,6 @@ def _results_table(summary: dict, shipped: str) -> None:
 </div>""")
 
 
-def _run_trace(summary: dict, runs: list[dict], shipped: str) -> None:
-    md('<div class="card" style="margin-bottom:8px;"><h3>Look inside a run</h3>'
-       '<p class="muted" style="margin:0;">Pick any run from the official matrix and follow it through both agents.</p></div>')
-    names = rd.scenarios(summary)
-    d_scenario, d_label, d_repeat = rd.default_run(summary, runs, shipped)
-    labels = [c["label"] for c in summary["columns"]]
-    s1, s2, s3 = st.columns(3)
-    scenario = s1.selectbox("Scenario", names, index=names.index(d_scenario),
-                            format_func=lambda s: f"{s}  · held out" if rd.is_held_out(s) else s)
-    label = s2.selectbox("Setup", labels, index=labels.index(d_label),
-                         format_func=lambda l: rd.column_title(rd.column(summary, l)))
-    repeat = s3.selectbox("Repeat", list(range(1, summary["repeats"] + 1)), index=d_repeat - 1)
-
-    col = rd.column(summary, label)
-    run = rd.find_run(runs, scenario, col["model"], col["prompt_version"], repeat)
-    if run is None:
-        md('<div class="card err">That run is not in the official results.</div>')
-        return
-    render_run(run)
-
-
 def _cost(summary: dict) -> str:
     rows = "".join(
         f'<tr><td>{esc(rd.column_title(c))}</td>'
@@ -149,11 +202,16 @@ def _no_prompt_fixed(summary: dict) -> str:
 def render() -> None:
     summary, runs = _load()
     shipped = rd.active_label(rd.load_active())
-    _intro(summary, runs)
+    with st.container(key="hero_slot"):
+        hero = st.empty()  # filled after the picker, so the headline follows the selected run
+    run = _pick(summary, runs, shipped)
+    with hero.container():
+        if run is not None:
+            _hero(summary, runs, run)
+    _inspector(summary, runs, shipped, run)
     _what_i_found(summary, runs, shipped)
     _decision(summary, shipped)
     _results_table(summary, shipped)
-    _run_trace(summary, runs, shipped)
     c1, c2 = st.columns(2)
     with c1:
         md(_cost(summary))
