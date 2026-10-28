@@ -1,9 +1,10 @@
-# Lower bounds are the versions tested; upper bounds stop the next major release.
-streamlit>=1.66,<2
-openai>=3.37,<4
-pydantic>=2.14,<3
-requests>=2.34,<3
-python-dotenv>=1.2,<2
-pyyaml>=6.0,<7
-tzdata>=2026.5  # time zone data for zoneinfo on slim Linux images
-pytest>=9.1,<10
+# Pinned to exact versions for judging stability, so the demo and the tests run on the same
+# code that was tested. Direct dependencies only; each one brings its own.
+streamlit==1.66.1
+openai==3.37.0
+pydantic==2.14.1
+requests==2.34.2
+python-dotenv==1.2.4
+pyyaml==6.0.3
+tzdata==2026.5  # time zone data for zoneinfo on slim Linux images
+pytest==9.1.1
