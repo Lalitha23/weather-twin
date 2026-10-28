@@ -201,7 +201,8 @@ def _today() -> None:
     st.html(today_html(r, _mood(r), load_location(), display_conditions(r["tool"].get("conditions"))))
     updated = datetime.fromtimestamp(r["fetched_at"], PACIFIC).strftime("%a %b %-d, %H:%M PT")
     with st.container(key="footer_line"):
-        md(f'<p class="muted mono" style="margin:0 0 8px;font-size:13px;">{r["tokens"]:,} tokens · '
+        md(f'<p class="muted mono" style="margin:0 0 8px;font-size:13px;">{esc(r["agent2"]["model"].split("/")[-1])} · '
+           f'prompt {esc(r["agent2"]["prompt_version"])} · {r["tokens"]:,} tokens · '
            f'{r["latency_s"]:.1f} s · Cached run · updated {updated}</p>'
            f'<p class="muted" style="margin:0 0 8px;font-size:13px;">{esc(CACHE_NOTE)}</p>')
         _refresh_button()

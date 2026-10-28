@@ -36,16 +36,12 @@ load_secrets()
 from app import lab, report, today  # noqa: E402
 from app.ui import esc, inject_css, md, title  # noqa: E402
 
-INTRO = ("My son doesn't check the weather before school, so I'm building two agents to tell him: "
-         "Agent 1 reads the weather, Agent 2 decides jacket and umbrella and, later, will tell him by text or a speaker in his room. "
-         "Before anything texts a child, Test Lab runs both agents against a twin of the weather tool, "
-         "feeds them bad and malicious data on purpose, and checks whether a failure in Agent 1 travels to Agent 2.")
+INTRO = "Testing if bad weather data or prompt injections can trick Agent 2 via Agent 1's handoff."
 
 inject_css()
 with st.container(key="wt_header"):
     title()
-    md(f'<p class="muted" style="margin:0 0 4px;max-width:880px;">{esc(INTRO)}</p>'
-       '<p style="margin:0;"><b>New here? Open Test Lab → Official report to see what I found.</b></p>')
+    md(f'<p class="muted" style="margin:0;">{esc(INTRO)}</p>')
 tab_today, tab_lab = st.tabs(["Today", "Test Lab"])
 # Test Lab first in code, so a slow Today run can't leave the report blank.
 with tab_lab:

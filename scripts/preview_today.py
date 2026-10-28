@@ -53,7 +53,7 @@ today.run_today = lambda *_args: saved_today(scenario)
 real_xray = xray._preview_original = getattr(xray, "_preview_original", xray.xray_html)
 forced = st.query_params.get("xray")
 if forced in ("open", "closed"):
-    xray.xray_html = lambda r, layout, open_=None: real_xray(r, layout, forced == "open")
+    xray.xray_html = lambda r, layout, open_=None, **kw: real_xray(r, layout, forced == "open", **kw)
 else:
     xray.xray_html = real_xray
 runpy.run_path(str(ROOT / "app" / "streamlit_app.py"), run_name="__main__")

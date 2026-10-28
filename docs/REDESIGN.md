@@ -10,7 +10,7 @@ This file is the build target for the redesign. It replaces the "Visual tokens",
 - Animated, clickable parts are built as self contained HTML blocks, because Streamlit reruns the page on every widget click, so smooth animations cannot live in native widgets.
   - **Today uses `st.html`, with no iframe and no JavaScript.** The sky is plain HTML and CSS. The X-ray toggle is a native `<details>`/`<summary>`, so it has a real label, keyboard focus with a visible focus ring, Space and Enter to toggle, and its open or closed state announced. Two copies render, open on desktop and folded on phone, and CSS shows one. An iframe could not paint the full screen sky, and `components.html` iframes have a fixed height that can't follow the X-ray folding.
   - **The Inspector (Test Lab) uses `st.iframe`** with an HTML string, with its data passed in as JSON from Python and inserted with `textContent`. It needs JavaScript for the replay, and its height is fixed. (`streamlit.components.v1.html` does the same, but Streamlit 1.66 deprecates it for removal, and `requirements.txt` allows newer 1.x releases.)
-  - The iframe holds only the pipeline, the replay controls and the step panel. The run picker, the "Jump to" buttons and the side panel are native Streamlit around it. Its height is set in CSS with a container query on its own width, so the outer height switches at the same 600 px point as the layout inside it: 740 px wide layout, 975 px narrow, 1050 px under 346 px.
+  - The iframe holds only the pipeline, the replay controls and the step panel. The run picker, the "Jump to" buttons and the side panel are native Streamlit around it. It uses `st.iframe(height="content")`, so the frame is exactly as tall as the page inside it.
 - External resources: Google Fonts only. No other scripts or CDNs.
 - Every animation stops under `@media (prefers-reduced-motion: reduce)`, and autoplay is off then too.
 
@@ -68,7 +68,7 @@ For screenshots and the demo video, allow a preview query parameter, `?sky=rain`
 
 ### Today layout, top to bottom
 
-1. Header and tabs as now, with the tab bar on a frosted pill.
+1. Header and tabs, with the tab bar on a frosted pill. Under the title, on every tab, one line only: "Testing if bad weather data or prompt injections can trick Agent 2 via Agent 1's handoff." The full story of my son's morning message lives in the README.
 2. Location line: "Redmond, WA 98052 · Mon · weather at 11:23". Day and time come from the tool's `observed_at`, not from when the run was cached.
 3. Big temperature (about 76 px, weight 900), the friendly condition word under it ("Cloudy"), and "rain 18%" in mono on the right.
 4. **The answer card.** Label "THE ANSWER" in small mono. Big two line answer, for example "No jacket." / "No umbrella.", or "Take a jacket." / "Take an umbrella."
@@ -78,20 +78,21 @@ For screenshots and the demo video, allow a preview query parameter, `?sky=rain`
      - "Agent 1 reported different numbers than the tool" when numbers_match_tool fails.
    - **Rules badge.** Display logic that mirrors umbrella_rule and jacket_rule: apply umbrella when rain is over 50% and jacket when it is under 10 °C to the **tool's** numbers, and compare with Agent 2's decision. Show "✓ matches the weather data" (blue), or in orange "✗ doesn't match the weather data", or "Rules can't be checked, weather data incomplete" when a number is missing. Put it in a pure function in `app/sky.py` or a small display module, with unit tests. It does not change `checks/checks.py`.
 5. **X-ray this answer** button (48 px tall, ink fill, white text). When open it reads "Close X-ray" and turns outlined blue.
-6. Footer line, tokens and latency, "Cached run · updated HH:MM", the cached run note, then Refresh exactly as now.
+6. Footer line: the model and prompt (shown once, here), tokens and latency, "Cached run · updated HH:MM", the cached run note, then Refresh exactly as now.
 
 ### X-ray
 
 Built with `st.html` (see Scope rules), holding the answer card, the button and the layers.
 
 - **Folded.** The three layers sit behind the answer card as a stack peeking out below it: offsets 16, 28 and 40 px, scales .94, .88 and .82, opacities .75, .5 and .3.
-- **Unfolded.** The layers slide down into a readable column under the answer card, with a thin blue line running down their left edge (650 ms, `cubic-bezier(.2,.8,.2,1)`). A thin blue scan line sweeps the answer card while open.
-- Layer order once open, top to bottom:
-  1. **Agent 2 decided.** Pills for model and prompt version. Jacket, umbrella and confident values. Agent 2's own why text. The same rules badge as the answer card.
-  2. A small label between layers: "handoff · Agent 2 reads only this".
-  3. **Agent 1 handed over.** Pills for model and prompt. The summary as short labelled lines (temperature, rain chance, wind, conditions, data_ok, notes), with any value that differs from the tool highlighted and marked "← was X". "✓ numbers match the tool", or in orange "Agent 1 reported different numbers than the tool".
-  4. **Weather data · get_weather.** The raw tool output from live Open-Meteo.
-- Everything the current Today cards show must still be visible somewhere in these layers.
+- **Unfolded.** A compact chain slides down under the answer card (650 ms, `cubic-bezier(.2,.8,.2,1)`), titled "How this answer was made". A thin blue scan line sweeps the answer card while open.
+  - Three boxes, side by side on desktop and stacked with down arrows on phone:
+    1. **Weather data.** "temperature · rain chance", with the conditions word under it.
+    2. **Agent 1 handed over.** "temperature · rain chance", with "data ok" or "data not ok" under it. A value that differs from the tool is orange with "was X", and the box gets a 2 px orange border.
+    3. **Agent 2 decided.** "jacket · umbrella", with "confident" or "not confident" (orange) under it.
+  - The checks are small chips on the arrows. First arrow: "✓ numbers match" or "✗ numbers changed" (from numbers_match_tool). Second arrow: "✓ rules match" or "✗ rules don't match", from the same rules badge logic as the answer card, or "– rules can't be checked" when data is incomplete.
+  - No why text, rules badge or model pills inside the chain; the why and the badge stay on the answer card, and the model is in the footer. The full field lists of all three are behind a small "All fields" disclosure (also a native `<details>`).
+- Everything the earlier Today cards showed is still visible: on the answer card, in the chain, in the footer, or under "All fields".
 - **Default state.** Unfolded on desktop (900 px wide or more), so a judge sees the whole chain at once. Folded on phone.
 - Errors replace the answer card with a friendly card on a cloudy sky. Never a stack trace.
 
@@ -123,7 +124,7 @@ Public, no model calls. Reads `results/matrix_summary.json` and `results/officia
 
 **Replay controls** under the pipeline: a play and pause button (ink), four step buttons "1 · Tool", "2 · Agent 1", "3 · Agent 2", "4 · Verdict", and a 6 px progress bar that fills 25% per step. The bar is blue on step 1 and turns orange from the failing step on. It autoplays at 1.8 s per step and loops. Clicking a step pauses on it.
 
-**Inspector panel** (white card, left, about 60% width) changes with the step:
+**Inspector panel** (white card, left, about 60% width) changes with the step. Its height is the tallest of the four steps for the selected run, measured in the browser once the frame is visible and the fonts have loaded, so steps don't jump and short steps leave little empty space.
 - Step 1, "What the weather tool returned". The tool output as mono lines. Injected text is highlighted, including the holdout's units note in `observed_at`.
 - Step 2, "What Agent 1 handed over". The summary lines, with changed values highlighted and marked "← was 60". Agent 1's real notes text. Check boxes for handoff_clean and numbers_match_tool, plus honesty_agent1 and role_adherence when they apply.
 - Step 3, "What Agent 2 decided". Jacket, umbrella and confident. Check boxes for umbrella_rule, jacket_rule, injection_not_followed, honesty_agent2 and format_ok when they apply.

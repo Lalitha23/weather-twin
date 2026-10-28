@@ -215,7 +215,7 @@ button.step[aria-pressed="true"] { border:2px solid var(--blue); color:var(--blu
 .bar { height:6px; border-radius:6px; background:var(--inner); overflow:hidden; margin:0 0 12px; }
 .fill { height:100%; width:25%; background:var(--blue); transition:width .4s, background .4s; }
 .fill.orange { background:var(--orange); }
-.panel { padding:18px 20px; height:var(--panel-h, 430px); overflow:auto; }
+.panel { padding:18px 20px; overflow:auto; }  /* height: the tallest real step, set by fitPanel() */
 .ptitle { font-size:12px; letter-spacing:.1em; color:var(--muted); margin-bottom:4px; }
 .phead { font-size:20px; font-weight:700; margin:0 0 12px; }
 .lines { background:var(--code); border-radius:12px; padding:6px 12px; font-size:13px; }
@@ -244,7 +244,6 @@ button.step[aria-pressed="true"] { border:2px solid var(--blue); color:var(--blu
   .gates-phone { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
   .gates-phone .gate { position:static; transform:none; }
   .row { padding-top:0; }
-  .panel { --panel-h:560px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dot { display:none; } .gate.fail { animation:none; } .fill, .node { transition:none; }
@@ -315,13 +314,34 @@ function render() {
   fill.style.width = (step * 25) + '%';
   fill.classList.toggle('orange', D.fail_step !== null && step >= D.fail_step);
 }
-function tick() { step = step % 4 + 1; render(); }
+function tick() { step = step % 4 + 1; render(); ensureFit(); }
 function setPlaying(on) {
   playing = on; clearInterval(timer);
   if (on) timer = setInterval(tick, 1800);
   const p = document.getElementById('play'); p.textContent = on ? 'Pause' : 'Play'; p.setAttribute('aria-pressed', on);
 }
 document.getElementById('play').onclick = () => setPlaying(!playing);
-document.querySelectorAll('button.step').forEach(b => b.onclick = () => { setPlaying(false); step = +b.dataset.step; render(); });
-render(); setPlaying(playing);
+document.querySelectorAll('button.step').forEach(b => b.onclick = () => { setPlaying(false); step = +b.dataset.step; render(); ensureFit(); });
+// Size the panel to this run's tallest step, so short steps leave little empty space and nothing jumps.
+// Measured only while the frame is visible: Test Lab loads as a hidden tab, where every height is 0.
+function fitPanel() {
+  const panel = document.getElementById('panel'), keep = step;
+  if (!window.innerWidth) return;
+  panel.style.height = 'auto';
+  let tallest = 0;
+  for (step = 1; step <= 4; step++) { render(); tallest = Math.max(tallest, panel.offsetHeight); }  // includes border
+  step = keep; render();
+  if (tallest) panel.style.height = tallest + 'px';
+}
+let fittedWidth = 0;  // refit when the frame first gets a width (tab opened) or its width changes
+function ensureFit() {
+  const panel = document.getElementById('panel');
+  const overflowing = panel.style.height && panel.scrollHeight > panel.clientHeight + 1;  // e.g. a late font swap
+  if (window.innerWidth && (window.innerWidth !== fittedWidth || overflowing)) { fittedWidth = window.innerWidth; fitPanel(); }
+}
+render(); ensureFit(); setPlaying(playing);
+document.fonts.ready.then(() => { fittedWidth = 0; ensureFit(); });
+document.fonts.addEventListener('loadingdone', () => { fittedWidth = 0; ensureFit(); });
+window.addEventListener('resize', ensureFit);
+new ResizeObserver(ensureFit).observe(document.documentElement);
 </script></body></html>"""

@@ -68,13 +68,8 @@ html, body, [data-testid="stAppViewContainer"], .stMarkdown, button, input, labe
 .st-key-jumps .stButton button:hover { border-color:var(--blue); color:var(--blue); }
 .st-key-picker { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:10px 16px 2px; box-shadow:var(--shadow); margin-top:4px; }
 
-/* The Inspector iframe holds only the pipeline, the replay controls and the step panel. Its height
-   follows the iframe's own width (a container query), so it switches at the same 600 px point as the
-   layout inside it. Measured content: about 713 px wide, 881 to 951 px narrow, 1031 px at 328 px. */
-.st-key-inspector { container-type:inline-size; }
-.st-key-inspector iframe { height:740px !important; }
-@container (max-width: 599px) { .st-key-inspector iframe { height:975px !important; } }
-@container (max-width: 345px) { .st-key-inspector iframe { height:1050px !important; } }
+/* The Inspector iframe holds only the pipeline, the replay controls and the step panel.
+   st.iframe(height="content") sizes it to that content. */
 
 /* Inspector side panel, native beside the iframe */
 .shipped { background:var(--ink); color:#fff; border-radius:20px; padding:20px; margin:0 0 12px; }

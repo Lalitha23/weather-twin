@@ -92,8 +92,8 @@ def _inspector(summary: dict, runs: list[dict], shipped: str, run: dict) -> None
             md('<div class="card err">That run is not in the official results.</div>')
         else:
             # st.iframe replaces the deprecated components.html. Our own page, with run text passed
-            # as JSON and shown with textContent. Height is set per breakpoint in CSS (.st-key-inspector).
-            st.iframe(inspector_html(inspector_data(run, scenario_expected(run["scenario"]))), height=740)
+            # as JSON and shown with textContent. height="content" follows the page inside.
+            st.iframe(inspector_html(inspector_data(run, scenario_expected(run["scenario"]))), height="content")
     with right:
         _side_panel(summary, runs, shipped)
 

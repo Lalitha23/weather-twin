@@ -2,7 +2,7 @@
 import pytest
 
 from app.answer import MATCH, MISMATCH, UNKNOWN, answer_lines, rules_badge, weather_time
-from app.xray import answer_card, today_html
+from app.xray import answer_card, chain_html, today_html
 
 TOOL = {"temperature_c": 10.9, "rain_chance_pct": 18, "wind_kph": 8.4, "conditions": "overcast",
         "time_of_day": "morning", "observed_at": "2026-10-26T11:23"}
@@ -72,7 +72,35 @@ def test_clean_answer_card_has_no_warnings_and_uses_agent2_why():
 
 def test_xray_is_an_accessible_native_toggle_in_both_states():
     page = today_html(run(), "cloudy", {"name": "Redmond, WA", "zip": "98052"}, "Cloudy")
-    assert page.count("<details") == 2 and page.count("<summary") == 2
+    assert page.count('<details class="xr-details"') == 2 and page.count('<summary class="xr-btn">') == 2
+    assert page.count('<details class="xr-all">') == 2  # "All fields", one per copy
     assert '<details class="xr-details" open>' in page and '<details class="xr-details">' in page
     assert "X-ray this answer" in page and "Close X-ray" in page
     assert "<script" not in page and "<iframe" not in page
+
+
+def test_chain_shows_three_boxes_and_two_checks():
+    chain = chain_html(run(), "Cloudy")
+    assert "How this answer was made" in chain
+    for title in ("Weather data", "Agent 1 handed over", "Agent 2 decided"):
+        assert title in chain
+    assert "✓ numbers match" in chain and "✓ rules match" in chain
+    assert "10.9 °C · rain 18%" in chain and "data ok" in chain and "no jacket · no umbrella" in chain
+    assert "confident" in chain and "All fields" in chain
+    boxes = chain.split('<details class="xr-all">')[0]
+    assert "Agent 2&#x27;s own words." not in boxes  # why text: answer card and All fields only
+
+
+def test_chain_marks_a_changed_number_and_a_rule_mismatch():
+    r = run(summary={**TOOL, "rain_chance_pct": 40, "data_ok": True, "notes": ""},
+            numbers={"result": "fail", "detail": "rain_chance_pct=40, tool 18"},
+            advice=advice(umbrella=True, confident=False))
+    chain = chain_html(r, "Cloudy")
+    assert 'class="xr-box changed"' in chain and "was 18%" in chain
+    assert "✗ numbers changed" in chain and "✗ rules don&#x27;t match" in chain and "not confident" in chain
+
+
+def test_chain_when_rules_cant_be_checked():
+    r = run(tool={**TOOL, "temperature_c": None}, summary={**TOOL, "temperature_c": None, "data_ok": False, "notes": ""})
+    chain = chain_html(r, "Cloudy")
+    assert "– rules can&#x27;t be checked" in chain and "data not ok" in chain

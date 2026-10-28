@@ -12,10 +12,6 @@ from app import answer
 from app.report_data import differing_fields
 from app.sky import CHIP_DARK, CHIP_LIGHT, SKY_CSS, ink, is_dark, rgba, sky_html
 
-SUMMARY_LINES = (("temperature_c", "temperature", " °C"), ("rain_chance_pct", "rain chance", "%"),
-                 ("wind_kph", "wind", " km/h"), ("conditions", "conditions", ""),
-                 ("data_ok", "data_ok", ""), ("notes", "notes", ""))
-
 
 def _fmt(value, unit: str = "") -> str:
     if value is None:
@@ -25,11 +21,6 @@ def _fmt(value, unit: str = "") -> str:
     if isinstance(value, (int, float)):
         return f"{value:g}{unit}"
     return str(value) or "–"
-
-
-def _pills(agent: dict) -> str:
-    return (f'<div class="xr-pills"><span>{escape(agent["model"].split("/")[-1])}</span>'
-            f'<span>prompt {escape(agent["prompt_version"])}</span></div>')
 
 
 def _badge(badge: dict, extra_class: str = "") -> str:
@@ -70,66 +61,100 @@ def answer_card(r: dict) -> str:
 </section>"""
 
 
-def _yes(v: bool) -> str:
-    return "yes" if v else "no"
+def _num(value, unit: str) -> str:
+    if value is None:
+        return "– °C" if "°C" in unit else "–"  # keep "temperature · rain" readable when one is missing
+    return f"{value:g}{unit}"
 
 
-def _agent2_layer(r: dict) -> str:
-    a = r["advice"]
-    return f"""<div class="xr-layer">
-  <div class="xr-title">Agent 2 decided</div>{_pills(r["agent2"])}
-  <div class="xr-lines">
-    <div><span>jacket</span><b>{_yes(a["jacket"])}</b></div>
-    <div><span>umbrella</span><b>{_yes(a["umbrella"])}</b></div>
-    <div><span>confident</span><b class="{'' if a['confident'] else 'warn'}">{_yes(a["confident"])}</b></div>
-  </div>
-  <p class="xr-why">{escape(a["why"])}</p>
-  {_badge(answer.rules_badge(r["tool"], a), "small")}
+def _chip(state: str, text: str) -> str:
+    return f'<span class="xr-chip {state}">{escape(text)}</span>'
+
+
+def _arrow(chip: str) -> str:
+    return f'<div class="xr-arrow"><span class="xr-arrowhead" aria-hidden="true"></span>{chip}</div>'
+
+
+def _numbers_chip(r: dict) -> str:
+    result = r["numbers"]["result"]
+    if result == "pass":
+        return _chip("match", "✓ numbers match")
+    if result == "fail":
+        return _chip("mismatch", "✗ numbers changed")
+    return _chip("unknown", "– numbers not checked")
+
+
+def _rules_chip(r: dict) -> str:
+    state = answer.rules_badge(r["tool"], r["advice"])["state"]
+    text = {"match": "✓ rules match", "mismatch": "✗ rules don't match",
+            "unknown": "– rules can't be checked"}[state]
+    return _chip(state, text)
+
+
+def _weather_box(r: dict, condition_word: str) -> str:
+    tool = r["tool"]
+    return f"""<div class="xr-box">
+  <div class="xr-kicker">Weather data</div>
+  <div class="xr-main">{_num(tool.get("temperature_c"), " °C")} · rain {_num(tool.get("rain_chance_pct"), "%")}</div>
+  <div class="xr-under">{escape(condition_word or "–")}</div>
 </div>"""
 
 
-def _agent1_layer(r: dict) -> str:
+def _agent1_box(r: dict) -> str:
     tool, summary = r["tool"], r["summary"]
-    changed = differing_fields(tool, summary)
-    rows = []
-    for key, label, unit in SUMMARY_LINES:
-        value = _fmt(summary.get(key), unit)
-        if key in changed:
-            rows.append(f'<div class="hl"><span>{label}</span><b>{escape(value)} '
-                        f'<em>← was {escape(_fmt(tool.get(key), unit))}</em></b></div>')
-        else:
-            rows.append(f'<div><span>{label}</span><b>{escape(value)}</b></div>')
-    if r["numbers"]["result"] == "fail":
-        check = '<div class="xr-badge mismatch small">Agent 1 reported different numbers than the tool</div>'
-    else:
-        check = '<div class="xr-badge match small">✓ numbers match the tool</div>'
-    return f"""<div class="xr-layer">
-  <div class="xr-title">Agent 1 handed over</div>{_pills(r["agent1"])}
-  <div class="xr-lines">{"".join(rows)}</div>
-  {check}
+    changed = differing_fields(tool, summary) & {"temperature_c", "rain_chance_pct"}
+
+    def value(key: str, unit: str, prefix: str = "") -> str:
+        shown = f"{prefix}{_num(summary.get(key), unit)}"
+        if key not in changed:
+            return escape(shown)
+        return (f'<span class="xr-changed">{escape(shown)} '
+                f'<em>was {escape(_num(tool.get(key), unit))}</em></span>')
+
+    flagged = bool(changed) or r["numbers"]["result"] == "fail"
+    data_ok = "data ok" if summary.get("data_ok") else "data not ok"
+    return f"""<div class="xr-box{' changed' if flagged else ''}">
+  <div class="xr-kicker">Agent 1 handed over</div>
+  <div class="xr-main">{value("temperature_c", " °C")} · {value("rain_chance_pct", "%", "rain ")}</div>
+  <div class="xr-under{'' if summary.get('data_ok') else ' warn'}">{data_ok}</div>
 </div>"""
 
 
-def _tool_layer(r: dict) -> str:
-    rows = "".join(f'<div><span>{escape(str(k))}</span><b>{escape(_fmt(v))}</b></div>'
-                   for k, v in r["tool"].items())
-    return f"""<div class="xr-layer">
-  <div class="xr-title">Weather data · get_weather</div>
-  <div class="xr-sub">Raw tool output from live Open-Meteo</div>
-  <div class="xr-lines">{rows}</div>
+def _agent2_box(r: dict) -> str:
+    a = r["advice"]
+    jacket = "jacket" if a["jacket"] else "no jacket"
+    umbrella = "umbrella" if a["umbrella"] else "no umbrella"
+    return f"""<div class="xr-box">
+  <div class="xr-kicker">Agent 2 decided</div>
+  <div class="xr-main">{jacket} · {umbrella}</div>
+  <div class="xr-under{'' if a['confident'] else ' warn'}">{'confident' if a['confident'] else 'not confident'}</div>
 </div>"""
 
 
-def xray_html(r: dict, layout: str, open_: bool | None = None) -> str:
+def _field_list(title: str, data: dict) -> str:
+    rows = "".join(f'<div><span>{escape(str(k))}</span><b>{escape(_fmt(v))}</b></div>' for k, v in data.items())
+    return f'<div class="xr-fields-col"><div class="xr-kicker">{title}</div><div class="xr-lines">{rows}</div></div>'
+
+
+def chain_html(r: dict, condition_word: str) -> str:
+    """How this answer was made: three boxes with the two checks on the arrows, then All fields."""
+    fields = (_field_list("Weather data · get_weather", r["tool"]) + _field_list("Agent 1 summary", r["summary"])
+              + _field_list("Agent 2 advice", r["advice"]))
+    return f"""<div class="xr-chain">
+  <div class="xr-chain-title">How this answer was made</div>
+  <div class="xr-row">{_weather_box(r, condition_word)}{_arrow(_numbers_chip(r))}{_agent1_box(r)}{_arrow(_rules_chip(r))}{_agent2_box(r)}</div>
+  <details class="xr-all"><summary>All fields</summary><div class="xr-fields">{fields}</div></details>
+</div>"""
+
+
+def xray_html(r: dict, layout: str, open_: bool | None = None, condition_word: str = "") -> str:
     """One X-ray copy. layout is "desk" (shown from 900 px, open by default) or "phone" (folded by default)."""
     open_ = layout == "desk" if open_ is None else open_
-    layers = (_agent2_layer(r) + '<div class="xr-handoff">handoff · Agent 2 reads only this</div>'
-              + _agent1_layer(r) + _tool_layer(r))
     return f"""<div class="xr xr-{layout}">
   <div class="xr-stack">{answer_card(r)}<div class="xr-peek" aria-hidden="true"><i></i><i></i><i></i></div></div>
   <details class="xr-details"{' open' if open_ else ''}>
     <summary class="xr-btn"><span class="xr-when-closed">X-ray this answer</span><span class="xr-when-open">Close X-ray</span></summary>
-    <div class="xr-layers">{layers}</div>
+    <div class="xr-layers">{chain_html(r, condition_word)}</div>
   </details>
 </div>"""
 
@@ -137,7 +162,8 @@ def xray_html(r: dict, layout: str, open_: bool | None = None) -> str:
 def today_html(r: dict, mood: str, location: dict, condition_word: str) -> str:
     return (f'<style>{TODAY_CSS}</style>{sky_html(mood)}'
             f'<div class="wt-today {"sky-dark" if is_dark(mood) else "sky-light"}" style="--sky-ink:{ink(mood)}">'
-            f'{hero_html(r, location, condition_word)}{xray_html(r, "desk")}{xray_html(r, "phone")}</div>')
+            f'{hero_html(r, location, condition_word)}{xray_html(r, "desk", condition_word=condition_word)}'
+            f'{xray_html(r, "phone", condition_word=condition_word)}</div>')
 
 
 def error_html(message: str) -> str:
@@ -161,7 +187,7 @@ TODAY_CSS = """
 
 .wt-today { position:relative; z-index:1; max-width:760px; margin:8px auto 16px; color:#0F1B2A;
   font-family:'Geist', system-ui, sans-serif; }
-.wt-today .mono, .xr-lines, .xr-pills, .ans-label, .xr-handoff { font-family:'Geist Mono', ui-monospace, monospace; }
+.wt-today .mono, .xr-lines, .ans-label { font-family:'Geist Mono', ui-monospace, monospace; }
 
 /* Frosted chip for small text sitting on the sky (4.5:1 on every mood) */
 .td-chip { display:inline-block; font-size:15px; font-weight:500; border-radius:999px; padding:6px 14px;
@@ -218,31 +244,40 @@ details[open] > .xr-btn { background:rgba(255,255,255,.88); color:#0B5CAD; borde
 details[open] > .xr-btn .xr-when-closed { display:none; }
 details[open] > .xr-btn .xr-when-open { display:inline; }
 
-/* Unfolded layers */
-.xr-layers { position:relative; margin-top:16px; padding-left:18px; }
-.xr-layers::before { content:""; position:absolute; left:0; top:6px; bottom:6px; width:2px; background:#0B5CAD;
-  border-radius:2px; transform-origin:top; }
+/* Unfolded: the compact chain */
+.xr-layers { margin-top:16px; }
 details[open] .xr-layers { animation:xr-open .65s cubic-bezier(.2,.8,.2,1); }
-details[open] .xr-layers::before { animation:xr-line .65s cubic-bezier(.2,.8,.2,1); }
 @keyframes xr-open { from { opacity:0; transform:translateY(-28px); } to { opacity:1; transform:none; } }
-@keyframes xr-line { from { transform:scaleY(0); } to { transform:scaleY(1); } }
-.xr-layer { background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-radius:20px; padding:18px 20px; margin:0 0 12px; color:#0F1B2A; box-shadow:0 8px 24px rgba(11,92,173,.08); }
-.xr-title { font-size:17px; font-weight:700; margin-bottom:8px; }
-.xr-sub { font-size:13px; color:#5B6B7D; margin:-4px 0 8px; }
-.xr-pills { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-.xr-pills span { font-size:13px; border:1px solid #D3E2F0; border-radius:999px; padding:2px 10px; background:#F6F9FC; }
+.xr-chain { background:rgba(255,255,255,.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-radius:20px; padding:18px 20px; color:#0F1B2A; box-shadow:0 8px 24px rgba(11,92,173,.08); }
+.xr-chain-title { font-size:17px; font-weight:700; margin-bottom:14px; }
+.xr-row { display:flex; align-items:stretch; gap:0; }
+.xr-box { flex:1 1 0; min-width:0; border:1px solid #D3E2F0; border-radius:14px; padding:12px 14px; background:#FFFFFF; }
+.xr-box.changed { border:2px solid #EA580C; padding:11px 13px; }
+.xr-kicker { font-family:'Geist Mono', ui-monospace, monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#5B6B7D; }
+.xr-main { font-size:16px; font-weight:700; margin:6px 0 4px; }
+.xr-under { font-size:14px; color:#33475B; }
+.xr-under.warn { color:#C2410C; font-weight:600; }
+.xr-changed { color:#C2410C; }
+.xr-changed em { font-style:normal; font-weight:500; font-size:13px; }
+.xr-arrow { flex:0 0 128px; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:0 6px; }
+.xr-arrowhead { position:relative; width:100%; height:2px; background:#0B5CAD; }
+.xr-arrowhead::after { content:""; position:absolute; right:-1px; top:-5px; border-left:10px solid #0B5CAD;
+  border-top:6px solid transparent; border-bottom:6px solid transparent; }
+.xr-chip { font-size:12px; font-weight:600; border-radius:10px; padding:2px 8px; order:-1; max-width:100%; text-align:center; line-height:1.3; }
+.xr-chip.match { background:#EEF5FC; color:#0B5CAD; border:1px solid #BFD6EE; }
+.xr-chip.mismatch { background:#FFF4EC; color:#C2410C; border:1px solid #FDBA8C; }
+.xr-chip.unknown { background:#F6F9FC; color:#5B6B7D; border:1px solid #D3E2F0; }
+.xr-all { margin-top:14px; }
+.xr-all > summary { cursor:pointer; font-size:14px; font-weight:600; color:#0B5CAD; min-height:32px; display:inline-flex; align-items:center; }
+.xr-all > summary:focus-visible { outline:3px solid #0B5CAD; outline-offset:2px; border-radius:6px; }
+.xr-fields { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin-top:8px; }
+.xr-fields .xr-kicker { margin-bottom:6px; }
 .xr-lines { background:#F6F9FC; border-radius:12px; padding:8px 12px; font-size:13px; }
 .xr-lines > div { display:flex; justify-content:space-between; gap:12px; padding:4px 0; border-bottom:1px solid #E3EBF3; }
 .xr-lines > div:last-child { border-bottom:none; }
 .xr-lines span { color:#5B6B7D; flex:none; }
 .xr-lines b { font-weight:500; text-align:right; word-break:break-word; }
-.xr-lines b.warn { color:#C2410C; }
-.xr-lines .hl b { background:#FFEDD5; color:#9A3412; border-radius:4px; padding:0 4px; }
-.xr-lines .hl em { font-style:normal; font-weight:600; }
-.xr-why { font-size:14px; margin:10px 0 0; color:#33475B; }
-.xr-handoff { display:inline-block; font-size:13px; font-weight:600; color:#0B5CAD; background:rgba(255,255,255,.88);
-  border-radius:999px; padding:4px 12px; margin:0 0 12px; }
 
 /* Open on desktop, folded on phone */
 .xr-phone { display:none; }
@@ -252,6 +287,13 @@ details[open] .xr-layers::before { animation:xr-line .65s cubic-bezier(.2,.8,.2,
   .td-temp { font-size:64px; }
   .ans-big { font-size:32px; }
   .ans-card { padding:18px; }
+  .xr-row { flex-direction:column; }
+  .xr-arrow { flex:none; flex-direction:row; justify-content:flex-start; padding:8px 0 8px 18px; gap:10px; }
+  .xr-arrowhead { width:2px; height:26px; flex:none; order:-2; }
+  .xr-arrowhead::after { right:auto; left:-5px; top:auto; bottom:-1px; border-left:6px solid transparent;
+    border-right:6px solid transparent; border-top:10px solid #0B5CAD; border-bottom:0; }
+  .xr-chip { order:0; }
+  .xr-fields { grid-template-columns:1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   .wt-today *, .wt-today *::before, .wt-today *::after { animation:none !important; transition:none !important; }
