@@ -1,7 +1,7 @@
 """Weather Twin app: Today (live agent) and Test Lab (saved results).
 
 Run from the repo root:  streamlit run app/streamlit_app.py
-Layout, colours and wording follow docs/DESIGN.md.
+Layout, colours and wording follow docs/DESIGN.md, and docs/REDESIGN.md where they differ.
 """
 import os
 import sys
@@ -42,9 +42,10 @@ INTRO = ("My son doesn't check the weather before school, so I'm building two ag
          "feeds them bad and malicious data on purpose, and checks whether a failure in Agent 1 travels to Agent 2.")
 
 inject_css()
-title()
-md(f'<p class="muted" style="margin:0 0 4px;max-width:880px;">{esc(INTRO)}</p>'
-   '<p style="margin:0 0 12px;"><b>New here? Open Test Lab → Official report to see what I found.</b></p>')
+with st.container(key="wt_header"):
+    title()
+    md(f'<p class="muted" style="margin:0 0 4px;max-width:880px;">{esc(INTRO)}</p>'
+       '<p style="margin:0;"><b>New here? Open Test Lab → Official report to see what I found.</b></p>')
 tab_today, tab_lab = st.tabs(["Today", "Test Lab"])
 # Test Lab first in code, so a slow Today run can't leave the report blank.
 with tab_lab:

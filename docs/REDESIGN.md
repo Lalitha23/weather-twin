@@ -7,7 +7,9 @@ This file is the build target for the redesign. It replaces the "Visual tokens",
 - Presentation only. Do not change agents, prompts, checks, scenarios, the weather tool's output, the runner, or the official results files.
 - No new model calls anywhere. Today still runs once per Pacific day and Refresh still needs `APP_PASSWORD`.
 - All existing tests must still pass.
-- Animated, clickable parts are built as small self contained HTML blocks with `streamlit.components.v1.html`, with their data passed in as JSON from Python. Streamlit reruns the page on every widget click, so smooth animations cannot live in native widgets.
+- Animated, clickable parts are built as self contained HTML blocks, because Streamlit reruns the page on every widget click, so smooth animations cannot live in native widgets.
+  - **Today uses `st.html`, with no iframe and no JavaScript.** The sky is plain HTML and CSS. The X-ray toggle is a native `<details>`/`<summary>`, so it has a real label, keyboard focus with a visible focus ring, Space and Enter to toggle, and its open or closed state announced. Two copies render, open on desktop and folded on phone, and CSS shows one. An iframe could not paint the full screen sky, and `components.html` iframes have a fixed height that can't follow the X-ray folding.
+  - **The Inspector (Test Lab) uses `streamlit.components.v1.html`**, with its data passed in as JSON from Python. It needs JavaScript for the replay, and its height is fixed, so the iframe's fixed height fits.
 - External resources: Google Fonts only. No other scripts or CDNs.
 - Every animation stops under `@media (prefers-reduced-motion: reduce)`, and autoplay is off then too.
 
@@ -77,7 +79,7 @@ For screenshots and the demo video, allow a preview query parameter, `?sky=rain`
 
 ### X-ray
 
-Built as one `components.html` block holding the answer card, the button and the layers.
+Built with `st.html` (see Scope rules), holding the answer card, the button and the layers.
 
 - **Folded.** The three layers sit behind the answer card as a stack peeking out below it: offsets 16, 28 and 40 px, scales .94, .88 and .82, opacities .75, .5 and .3.
 - **Unfolded.** The layers slide down into a readable column under the answer card, with a thin blue line running down their left edge (650 ms, `cubic-bezier(.2,.8,.2,1)`). A thin blue scan line sweeps the answer card while open.

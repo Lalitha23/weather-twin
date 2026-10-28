@@ -16,8 +16,10 @@ import streamlit as st
 
 from agents.advisor import run_advisor
 from agents.summarizer import make_client, run_summarizer
-from app.report_data import differing_fields, load_active
-from app.ui import esc, json_block, md
+from app.report_data import load_active
+from app.sky import preview_mood, sky_mood
+from app.ui import esc, md
+from app.xray import error_html, today_html
 from checks.checks import numbers_match_tool
 from tools.weather_live import load_location
 
@@ -174,63 +176,13 @@ def display_conditions(text: str | None) -> str:
     return DISPLAY_CONDITIONS.get(text.lower(), text[0].upper() + text[1:])
 
 
-def _fmt(value, unit: str) -> str:
-    return "–" if value is None else f"{value:g}{unit}"
-
-
-def _weather_card(r: dict) -> str:
-    """The raw numbers from the tool."""
-    tool = r["tool"]
-    observed = (tool.get("observed_at") or "")[:16]
-    try:
-        day = datetime.fromisoformat(observed).strftime("%a %b %-d")
-    except ValueError:
-        day = "Today"
-    temp = "–" if tool.get("temperature_c") is None else f"{round(tool['temperature_c'])}°"
-    loc = load_location()
-    return f"""<div class="card flow-card">
-  <div class="label">Weather data · get_weather</div>
-  <div class="place">{esc(loc['name'])} {esc(loc['zip'])}</div>
-  <div class="weather-top"><span>{esc(day)} · {esc(tool.get('time_of_day') or '')}</span>
-    <span class="cond">{esc(display_conditions(tool.get('conditions')))}</span></div>
-  <div class="weather-main"><div class="temp">{temp}<span style="font-size:22px;">C</span></div>
-    <div class="wx-side">Rain {_fmt(tool.get('rain_chance_pct'), '%')}<br>Wind {_fmt(tool.get('wind_kph'), ' km/h')}</div></div>
-</div>"""
-
-
-def _agent_pills(agent: dict) -> str:
-    return (f'<div class="pills" style="margin:0 0 12px;"><span class="pill">{esc(agent["model"].split("/")[-1])}</span>'
-            f'<span class="pill">prompt {esc(agent["prompt_version"])}</span></div>')
-
-
-def _agent1_card(r: dict) -> str:
-    note = ""
-    if r["numbers"]["result"] == "fail":
-        note = '<div class="note-orange">Agent 1 reported different numbers than the tool.</div>'
-    summary = json_block(r["summary"], differing_fields(r["tool"], r["summary"]))
-    return (f'<div class="card flow-card"><div class="ftitle">Agent 1, Summarizer</div>{_agent_pills(r["agent1"])}'
-            f'{summary}{note}</div>')
-
-
-def _handoff() -> str:
-    return ('<div class="handoff" aria-label="handoff"><div class="arrow"></div>'
-            '<div class="handoff-label">handoff</div>'
-            '<div class="handoff-sub">Agent 2 reads only this summary</div></div>')
-
-
-def _tile(name: str, yes: bool) -> str:
-    return (f'<div class="tile {"yes" if yes else ""}"><div class="label">{name}</div>'
-            f'<div class="big">{"Yes" if yes else "No"}</div></div>')
-
-
-def _agent2_card(r: dict) -> str:
-    a = r["advice"]
-    confidence = ('<span class="pill conf-yes">Confident</span>' if a["confident"]
-                  else '<span class="pill conf-no">Not confident</span>')
-    return (f'<div class="card flow-card"><div class="ftitle">Agent 2, Advisor</div>{_agent_pills(r["agent2"])}'
-            f'<div class="tiles">{_tile("Jacket", a["jacket"])}{_tile("Umbrella", a["umbrella"])}</div>'
-            f'<div style="margin:0 0 10px;">{confidence}</div>'
-            f'<div class="label">Why</div><div style="font-size:15px;">{esc(a["why"])}</div></div>')
+def _mood(r: dict | None) -> str:
+    """The sky for this run. ?sky=<mood> previews another sky; it never changes the data."""
+    preview = preview_mood(st.query_params.get("sky"))
+    if preview:
+        return preview
+    tool = r["tool"] if r and isinstance(r.get("tool"), dict) else {}
+    return sky_mood(tool.get("conditions"), tool.get("time_of_day"))
 
 
 def _today() -> None:
@@ -246,7 +198,7 @@ def _today() -> None:
                safe_detail(f"{type(e).__name__}: {e}"))
         return
 
-    md(f'<div class="flow">{_weather_card(r)}{_agent1_card(r)}{_handoff()}{_agent2_card(r)}</div>')
+    st.html(today_html(r, _mood(r), load_location(), display_conditions(r["tool"].get("conditions"))))
     updated = datetime.fromtimestamp(r["fetched_at"], PACIFIC).strftime("%a %b %-d, %H:%M PT")
     with st.container(key="footer_line"):
         md(f'<p class="muted mono" style="margin:0 0 8px;font-size:13px;">{r["tokens"]:,} tokens · '
@@ -257,7 +209,7 @@ def _today() -> None:
 
 def _error(message: str, detail: str) -> None:
     """Friendly card, then a collapsed Details line."""
-    md(f'<div class="card err">{esc(message)}</div>')
+    st.html(error_html(message))
     if detail:
         with st.expander("Details", expanded=False):
             md(f'<p class="mono" style="margin:0;font-size:13px;word-break:break-word;">{esc(detail)}</p>')
