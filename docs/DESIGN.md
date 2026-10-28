@@ -101,8 +101,8 @@ Every screen must work well on both. Test each one at desktop width (about 1280 
 
 | Screen | Desktop | Phone |
 |---|---|---|
-| Today | Weather, Agent 1, handoff arrow and Agent 2 side by side in one row, left to right, across the full content width. | Full width with 16 to 20 px side margins. The cards stack in the same order, with the handoff arrow pointing down. Answer tiles stay side by side. Refresh button easy to reach at the bottom. |
-| Official report | Decision card text and reason boxes side by side. Results table fully visible. Run trace panels in three columns. Cost table and "No prompt fixed this" card side by side. | Decision card stacks, reasons under the title. Results table scrolls sideways inside its own box. Run trace panels stack in order 1, 2, 3. Cards stack. |
+| Today | See `docs/REDESIGN.md`. Live sky behind the page. Answer card on top, X-ray layers unfolded in one column under it. | See `docs/REDESIGN.md`. Same order, full width with 16 to 20 px side margins. X-ray folded by default. Refresh easy to reach at the bottom. |
+| Official report | See `docs/REDESIGN.md`. Hero, then the Handoff Inspector with the inspector and side panel side by side. Decision card text and reason boxes side by side. Results table fully visible. Cost table and "No prompt fixed this" card side by side. | See `docs/REDESIGN.md`. Inspector nodes wrap two by two, inspector and side panel stack. Decision card stacks. Results table scrolls sideways inside its own box. Cards stack. |
 | Live comparison | Current and candidate boxes in one row. Count tiles in one row of four. | Current and candidate boxes stack. Count tiles in a two by two grid. Tables scroll sideways inside their own box. |
 
 General rules for both:

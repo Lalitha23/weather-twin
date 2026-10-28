@@ -122,6 +122,8 @@ Work one step at a time. Finish and commit each step before starting the next.
     backend to the tool explicitly instead of through WEATHER_BACKEND / WEATHER_SCENARIO env vars. (done)
 7c. Deploy to Streamlit Cloud. Steps in docs/DEPLOY.md; secrets listed in .streamlit/secrets.example.toml.
     Build target for 7a and 7b: docs/DESIGN.md, with screenshots in docs/design/.
+    Redesign build target: docs/REDESIGN.md. It replaces DESIGN.md's Visual tokens, Today tab and
+    Official report sections; where they disagree, REDESIGN.md wins.
 8. Ship. README, video under 3 minutes, Devpost write up, final push.
 
 ## How setups change

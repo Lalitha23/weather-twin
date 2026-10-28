@@ -37,7 +37,7 @@ from app import lab, report, today  # noqa: E402
 from app.ui import esc, inject_css, md, title  # noqa: E402
 
 INTRO = ("My son doesn't check the weather before school, so I'm building two agents to tell him: "
-         "Agent 1 reads the weather, Agent 2 decides jacket and umbrella and, later, will text him. "
+         "Agent 1 reads the weather, Agent 2 decides jacket and umbrella and, later, will tell him by text or a speaker in his room. "
          "Before anything texts a child, Test Lab runs both agents against a twin of the weather tool, "
          "feeds them bad and malicious data on purpose, and checks whether a failure in Agent 1 travels to Agent 2.")
 
