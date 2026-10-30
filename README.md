@@ -3,7 +3,7 @@
 Weather Twin catches the moment one AI agent's mistake becomes the next agent's decision.
 
 - **Live demo:** https://weather-twin-3zotnpgiffmqxkfzozvfph.streamlit.app/
-- **Video (under 3 minutes):** [TODO, add the link](https://weather-twin-3zotnpgiffmqxkfzozvfph.streamlit.app/)
+- **Video (under 3 minutes):** https://www.youtube.com/watch?v=Ijx9HAzlye8&t=5s
 
 Built for the Nebius x NVIDIA Global AI Hackathon 2026.
 
